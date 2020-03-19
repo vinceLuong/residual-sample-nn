@@ -126,7 +126,7 @@ def gradMSE(y, t):
 
 class Layer():
     
-    def __init__(self, n_nodes, act='logistic'):
+    def __init__(self, n_nodes, prior_distribution = None, act='logistic'):
         '''
             lyr = Layer(n_nodes, act='logistic')
             
@@ -140,7 +140,7 @@ class Layer():
         self.N = n_nodes  # number of nodes in this layer
         self.h = []      # node activities
         self.z = []
-        self.b = np.zeros(self.N)  # biases
+        self.b = Bias(self.N, prior_distribution)  # biases
         
         # Activation functions
         self.sigma = self.Logistic
@@ -175,12 +175,11 @@ class Network():
         '''
         # initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
-        N = NSamples(x)
         self.lyr[0].h = x
         # Loop through all layers.
         for i in range(self.n_layers-1):
             # Construct Weight and Bias matrix
-            weights = self.W[i]
+            weights = self.weight_matrix[i].W
             # Update next layer's income currents and activities.
             self.lyr[i+1].z = np.matmul(self.lyr[i].h, weights) + self.lyr[i+1].b
             self.lyr[i+1].h = self.lyr[i+1].sigma()
@@ -201,12 +200,11 @@ class Network():
         '''
         t = np.array(t)  # convert t to an array, in case it's not
         # Initialize variables.
-        N = NSamples(t)
         dEdh = self.gradLoss(self.lyr[-1].h, t)
         dhdz = self.lyr[-1].sigma_p()
         dEdz = dhdz * dEdh
         for ind in range(len(self.lyr)-2 ,-1, -1):
-            weights = self.W[ind]
+            weights = self.weight_matrix[ind].W
             dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
 
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
@@ -238,7 +236,7 @@ class Network():
             self.cost_history.append(self.Evaluate(inputs, targets))
     
     
-    def __init__(self, sizes, type='classifier'):
+    def __init__(self, sizes, type='classifier', prior_dist_weight=None, prior_dist_bias=None):
         '''
             net = Network(sizes, type='classifier')
 
@@ -254,12 +252,13 @@ class Network():
                   as well as the loss function.
                   'classifier': logistic, cross entropy
                   'regression': linear, mean squared error
+              prior_dist is the prior distribution weights follow,
+                  default is None, which is the normal
+                  neural network setup.
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers
-        self.W = []      # Weight matrices, indexed by the layer below it
-        self.mu = []     # Mean value for matrices.
-        self.var = []    # Variance values for matrices.
+        self.weight_matrix = []      # Weight matrices, indexed by the layer below it
         
         self.cost_history = []  # keeps track of the cost as learning progresses
         
@@ -279,20 +278,27 @@ class Network():
             activation = 'identity'
 
         # Create and add Layers (using logistic for hidden layers)
-        for n in sizes[:-1]:
-            self.lyr.append( Layer(n) )
+        for i, e in enumerate(sizes[:-1]):
+            self.lyr.append( Layer(e, prior_dist[i]))
    
         # For the top layer, we use the appropriate activtaion function
-        self.lyr.append( Layer(sizes[-1], act=activation) )
+        self.lyr.append( Layer(sizes[-1], prior_dist[-1], act=activation) )
     
         # Randomly initialize weight matrices
-        for idx in range(self.n_layers-1):
-            m = self.lyr[idx].N
-            n = self.lyr[idx+1].N
-            temp = np.random.normal(size=[m,n])/np.sqrt(m)
-            self.W.append(temp)
-            self.mu.append(0)
-            self.var.append(1)
+        if not prior_dist:
+            self.prior = False
+            for idx in range(self.n_layers-1):
+                m = self.lyr[idx].N
+                n = self.lyr[idx+1].N
+                temp = np.random.normal(size=[m,n])/np.sqrt(m)
+                # self.W.append(temp)
+
+        else:
+            self.prior = True
+            for idx in range(self.n_layers-1):
+                m = self.lyr[idx].N
+                n = self.lyr[idx+1].N
+                self.weight_matrix.append(Weight(m,n,prior_dist(prior_dist[idx])))
 
     def Evaluate(self, inputs, targets):
         '''
@@ -323,7 +329,61 @@ class Network():
         return 1. - float(n_incorrect) / NSamples(inputs)
 
 
+class Weight():
+
+    def __init__(self, num_row, num_col, distribution='gaussian'):
+        '''
+            weight_matrix = Weight(num_row, num_col, type='gaussian')
+
+            Creates a Weight class and saves it in the variable 'weight_matrix'.
+
+            Inputs:
+              num_row is the number of rows there will be in the weight matrix
+              num_col is the number of columns there will be in the weight matrix
+              type can be either 'classifier' or 'regression', and
+                  sets the activation function on the output layer,
+                  as well as the loss function.
+                  'classifier': logistic, cross entropy
+                  'regression': linear, mean squared error
+        '''
+        self.m = num_row    # Number of rows
+        self.n = num_col    # Number of columns
+        self.dis = distribution # Distribution type
+        
+        # When prior weight distribution is normal
+        if self.dis == 'gaussian':
+            self.W = np.random.normal(size=[self.m,self.n])
+            self.mu = 0
+            self.sigma = 1
+    
+    def Sample(self):
+        if self.dis == 'gaussian':
+            temp = np.random.normal(self.mu, self.sigma, size=[self.m,self.n])
+        return temp
 
 
+class Bias():
 
+    def __init__(self, n_nodes, distribution='gaussian'):
+        '''
+            bias_vector = Bias(n_nodes, type='gaussian')
 
+            Creates a Bias class and saves it in the variable 'b'.
+
+            Inputs:
+              n_nodes is the number of nodes in the hidden layer
+              distribution is the kind of distribution, the bias follows
+        '''
+        self.n = n_nodes    # Number of nodes in the hidden layer
+        self.dis = distribution # Distribution type
+        
+        # When prior weight distribution is normal
+        if self.dis == 'gaussian':
+            self.b = np.random.normal(size=[1,self.n])
+            self.mu = 0
+            self.sigma = 1
+    
+    def Sample(self):
+        if self.dis == 'gaussian':
+            temp = np.random.normal(self.mu, self.sigma, size=[1,self.n])
+        return temp
