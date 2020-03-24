@@ -122,7 +122,7 @@ def gradMSE(y, t):
 class Network():
 
     
-    def FeedForward(self, x):
+    def FeedForward(self, x, bootstrap):
         '''
             y = net.FeedForward(x)
 
@@ -132,17 +132,23 @@ class Network():
             All node use Logistic
             Note: The activation function used for the output layer
             depends on what self.Loss is set to.
+
+            Inputs:
+              x: The inputs. a (N by X) matrix.
+              bootstrap: Boolean. If true, using bootstrap to sample.
+                Otherwise, sample using distribution parameters.
         '''
         # initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
         self.lyr[0].h = x
-        self.W = []
+        self.W = [] # Initialize the weights, so that we can append sampled weights.
         # Loop through all layers.
         for i in range(self.n_layers-1):
-            # Construct Weight and Bias matrix
-            current_weight = self.weight_matrix[i].Sample()
+            # Sample weights and biases
+            current_weight = self.weight_matrix[i].Sample(bootstrap)
+            self.lyr[i+1].b = self.lyr[i+1].bias_vector.Sample(bootstrap)
+            # Stored the sampled results to W
             self.W.append(current_weight)
-            self.lyr[i+1].b = self.lyr[i+1].bias_vector.Sample()
             # Update next layer's income currents and activities.
             self.lyr[i+1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i+1].b
             self.lyr[i+1].h = self.lyr[i+1].sigma()
@@ -167,16 +173,15 @@ class Network():
         dhdz = self.lyr[-1].sigma_p()
         dEdz = dhdz * dEdh
         for ind in range(self.n_layers-2 ,-1, -1):
-            weights = self.W[ind]
+            weights = self.weight_matrix[ind].mu
             dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
-
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
             dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
             self.lyr[ind+1].b -= lrate * dense_dEdb 
-            self.W[ind] -= lrate * matrix_dEdW
+            self.W[ind] = self.weight_matrix[ind].mu - lrate * matrix_dEdW
             
-    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, progress=True):
+    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, bootstrap = False, progress=True):
         '''
             Network.Learn(data, lrate=0.05, epochs=1, progress=True)
 
@@ -190,23 +195,34 @@ class Network():
               epochs is the number of times to go through the training data
               progress (Boolean) indicates whether to show cost
         '''
+        # Initialize a dataframe to store 4D weight and bias results.
         weight = pd.DataFrame(index = range(times),columns=range(self.n_layers-1))
         bias = pd.DataFrame(index = range(times),columns=range(self.n_layers-1))
+        # If bootstrap == True, initialize the weights and bias samples.
+        if bootstrap:
+            for i in range(self.n_layers-1):
+                self.weight_matrix[i].Initialize_Bootstrap(times)
+                self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
+        # Loop through all epochs.
         for _ in range(epochs):
+            # In each epoch, running FeedForward and BackProp "times" times.
             for j in range(times):
-                y = self.FeedForward(inputs)
+                y = self.FeedForward(inputs, bootstrap)
                 self.BackProp(targets, lrate)
+                # Store the updated weights and biases in the DataFrame.
                 for i in range(self.n_layers-1):
                     weight[i][j] = self.W[i]
                     bias[i][j] = self.lyr[i+1].b
+            # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
                 self.weight_matrix[idx].Update(weight[idx].tolist(), times)
                 self.lyr[idx+1].bias_vector.Update(bias[idx].tolist(), times)
             if progress:
                 self.cost_history.append(self.Loss(self.lyr[-1].h, targets))
-            
+        # When bootstrap == True, this need to be changed.
         if progress:
-            self.cost_history.append(self.Evaluate(inputs, targets))
+            pass
+            # self.cost_history.append(self.Evaluate(inputs, targets))
     
     
     def __init__(self, sizes, type='classifier', prior_dist_weight=None, prior_dist_bias=None):
@@ -276,7 +292,7 @@ class Network():
             Outputs
              E is a scalar, the average loss
         '''
-        y = self.FeedForward(inputs)
+        y = self.FeedForward(inputs, False)
         return self.Loss(y, targets)
 
     def ClassificationAccuracy(self, inputs, targets):
@@ -286,7 +302,7 @@ class Network():
             Returns the fraction (between 0 and 1) of correct one-hot classifications
             in the dataset.
         '''
-        y = self.FeedForward(inputs)
+        y = self.FeedForward(inputs, False)
         yb = OneHot(y)
         n_incorrect = np.sum(yb!=targets) / 2.
         return 1. - float(n_incorrect) / NSamples(inputs)
