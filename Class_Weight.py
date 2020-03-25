@@ -20,8 +20,9 @@ class Weight():
         self.dis = distribution # Distribution type
         # When prior weight distribution is normal
         if self.dis == 'gaussian':
-            self.mu = np.zeros((self.m, self.n))
+            #self.mu = np.zeros((self.m, self.n))
             self.sigma = np.ones((self.m, self.n))
+            self.mu = np.random.uniform(low=-1, high=1, size=(self.m, self.n))
     
 
     def Initialize_Bootstrap(self, times):
@@ -56,7 +57,7 @@ class Weight():
         if self.dis == 'gaussian':
             # When bootstrap == False, sample from distribution directly.
             if not bootstrap:
-                weight = np.random.normal(self.mu, self.sigma, size=[self.m,self.n])
+                weight = np.random.normal(self.mu, self.sigma, size = [self.m,self.n])
             else:
                 # Otherwise using bootstrap.
                 max_len = len(self.bootstrap_matrix)
@@ -84,7 +85,7 @@ class Weight():
                 bootstrap_data[i][j] = data[index_matrix[i][j]][i][j]
         return bootstrap_data
 
-    def Update(self, lst, times):
+    def Update(self, lst, times, bootstrap):
         '''
             weight_matrix[index].Update(lst, times)
 
@@ -94,11 +95,16 @@ class Weight():
               lst: A list of samples we use to update.
               times: Number of times we sampled. 
                   It's also the number of elements in lst.
+              bootstrap: Boolean, Whether on or not to bootstrap
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
+
+        if bootstrap:
+            # Update mu using sample mean.
+            self.mu = np.sum(lst, 0) / times
         # When normal, the distribution parameters are mu and sigma.
-        if self.dis == 'gaussian':
+        elif self.dis == 'gaussian':
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
             # Update sigma using sample standard deviation.
-            # self.sigma = np.sqrt(np.sum(np.power(lst, 2)) / times - np.power(self.mu, 2))
+            self.sigma = np.sqrt(np.sum(np.power(lst, 2)) / times - np.power(self.mu, 2))

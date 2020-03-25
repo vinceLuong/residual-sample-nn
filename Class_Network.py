@@ -57,7 +57,10 @@ def CrossEntropy(y, t):
         Outputs:
           E: The mean CrossEntropy.
     '''
-    E = -np.sum(t*np.log(y) + (1.-t)*np.log(1.-y))
+    eps = 1e-5
+    y_temp = np.where(y == 1, 1-eps, y)
+    y_temp = np.where(y_temp == 0, eps, y_temp)
+    E = -np.sum(t*np.log(y_temp) + (1.-t)*np.log(1.-y_temp))
     return E / len(t)
 
 def gradCrossEntropy(y, t):
@@ -168,12 +171,21 @@ class Network():
         '''
         t = np.array(t)  # Convert t to an array, in case it's not.
         # Initialize variables.
-        dEdh = self.gradLoss(self.lyr[-1].h, t)
+        ###Code to set threshold
+        res_prep = self.lyr[-1].h - t
+        eps = 1e-5
+        cond = abs(res_prep) < self.th
+        y = np.where(cond, 0.5, self.lyr[-1].h)
+        y = np.where(y == 1, 1-eps, y)
+        y = np.where(y == 0, eps, y)
+        targ = np.where(cond, 0.5, t)
+        ###
+        dEdh = self.gradLoss(y, targ)
         dhdz = self.lyr[-1].sigma_p()
         dEdz = dhdz * dEdh
         for ind in range(self.n_layers-2 ,-1, -1):
             # Use sample mean to update, ignore the variance.
-            weights = self.weight_matrix[ind].mu
+            weights = self.weight_matrix[ind].mu ##################
             dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
@@ -198,8 +210,13 @@ class Network():
               progress (Boolean) indicates whether to show cost. Default is True.
         '''
         # Initialize a dataframe to store 4D weight and bias results.
-        weight = pd.DataFrame(index = range(times),columns=range(self.n_layers-1))
-        bias = pd.DataFrame(index = range(times),columns=range(self.n_layers-1))
+        #weight = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
+        #bias = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
+        weight = []
+        bias = []
+        for k in range((self.n_layers-1)):
+            weight.append([0]*(times))
+            bias.append([0]*(times))
         # If bootstrap == True, initialize the weights and bias samples.
         if bootstrap:
             for i in range(self.n_layers-1):
@@ -217,8 +234,8 @@ class Network():
                     bias[i][j] = self.lyr[i+1].b
             # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
-                self.weight_matrix[idx].Update(weight[idx].tolist(), times)
-                self.lyr[idx+1].bias_vector.Update(bias[idx].tolist(), times)
+                self.weight_matrix[idx].Update(weight[idx], times, bootstrap)
+                self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap)
             if progress:
                 self.cost_history.append(self.Loss(self.lyr[-1].h, targets))
 
@@ -230,7 +247,7 @@ class Network():
             # self.cost_history.append(self.Evaluate(inputs, targets))
     
     
-    def __init__(self, sizes, type='classifier', prior_dist_weight=None, prior_dist_bias=None):
+    def __init__(self, sizes, type='classifier', prior_dist_weight=None, prior_dist_bias=None, threshold=0.5):
         '''
             net = Network(sizes, type='classifier')
 
@@ -249,13 +266,15 @@ class Network():
               prior_dist_weight is the prior distribution weights follow,
                   default is None, which is the normal neural network setup.
               prior_dist_weight is the prior distribution biases follow,
-                  default is None, which is the normal neural network setup.   
+                  default is None, which is the normal neural network setup.
+              threshold used to create residual for sampling
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers.
         self.W = []
         self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
         self.cost_history = []  # keeps track of the cost as learning progresses.
+        self.th = threshold
         
         # Two common types of networks.
         # The member variable self.Loss refers to one of the implemented.
@@ -274,9 +293,9 @@ class Network():
 
         # Create and add Layers (using logistic for hidden layers).
         for i, e in enumerate(sizes[:-1]):
-            self.lyr.append( Layer(e, prior_dist_bias[i]))
+            self.lyr.append(Layer(e, prior_dist_bias[i]))
         # For the top layer, we use the appropriate activtaion function.
-        self.lyr.append( Layer(sizes[-1], prior_dist_bias[-1], act=activation))
+        self.lyr.append(Layer(sizes[-1], prior_dist_bias[-1], act=activation))
         # Initialize the weight matrices.
         for idx in range(self.n_layers-1):
             m = self.lyr[idx].N

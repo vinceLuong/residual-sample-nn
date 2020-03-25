@@ -18,9 +18,9 @@ class Bias():
         self.dis = distribution # Distribution type
         # When distribution is gaussian
         if self.dis == 'gaussian':
-            self.mu = np.zeros((1, self.n))
+            #self.mu = np.zeros((1, self.n))
             self.sigma = np.ones((1, self.n))
-    
+            self.mu = np.random.uniform(low = -1, high = 1, size=(1, self.n))
 
     def Initialize_Bootstrap(self, times):
         '''
@@ -85,7 +85,7 @@ class Bias():
         return bootstrap_data
 
 
-    def Update(self, lst, times):
+    def Update(self, lst, times, bootstrap):
         '''
             bias_vector.Update(lst, times)
 
@@ -95,11 +95,17 @@ class Bias():
               lst: A list of samples we use to update.
               times: Number of times we sampled. 
                   It's also the number of elements in lst.
+              bootstrap: Boolean, Whether on or not to bootstrap
+
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
+
+        if bootstrap:
+            # Update mu using sample mean.
+            self.mu = np.sum(lst, 0) / times
         # When normal, the distribution parameters are mu and sigma.
-        if self.dis == 'gaussian':
+        elif self.dis == 'gaussian':
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
             # Update sigma using sample standard deviation.
-            # self.sigma = np.sqrt(np.sum(np.power(lst, 2)) / times - np.power(self.mu, 2))
+            self.sigma = np.sqrt(np.sum(np.power(lst, 2)) / times - np.power(self.mu, 2))
