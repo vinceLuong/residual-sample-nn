@@ -110,6 +110,6 @@ class Bias():
             # Update sigma using sample standard deviation.
             sigma = np.zeros(lst[0].shape)
             for i in range(len(lst)):
-                difference = lst[0] - self.mu
+                difference = lst[i] - self.mu
                 sigma = sigma + np.power(difference, 2) / len(lst)
             self.sigma = sigma
