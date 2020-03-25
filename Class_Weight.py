@@ -48,7 +48,7 @@ class Weight():
 
             Inputs:
               bootstrap: Boolean. If true, using bootstrap to sample.
-                Otherwise, sample using distribution parameters.
+                  Otherwise, sample using distribution parameters.
             
             Outputs:
               bias: The weight used in Feedforward.
@@ -93,7 +93,7 @@ class Weight():
             Inputs:
               lst: A list of samples we use to update.
               times: Number of times we sampled. 
-                It's also the number of elements in lst.
+                  It's also the number of elements in lst.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
         # When normal, the distribution parameters are mu and sigma.

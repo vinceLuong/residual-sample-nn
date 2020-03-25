@@ -1,8 +1,8 @@
-# Standard imports
+# Standard imports.
 import numpy as np
 from Class_Bias import *
 
-# Class Layer
+# Class Layer.
 class Layer():
     
     def __init__(self, n_nodes, prior_distribution, act='logistic'):

@@ -1,7 +1,7 @@
-# Standard imports
+# Standard imports.
 import numpy as np
 
-# Class bias
+# Class bias.
 class Bias():
 
     def __init__(self, n_nodes, distribution='gaussian'):
@@ -47,7 +47,7 @@ class Bias():
 
             Inputs:
               bootstrap: Boolean. If true, using bootstrap to sample.
-                Otherwise, sample using distribution parameters.
+                  Otherwise, sample using distribution parameters.
             
             Outputs:
               bias: The bias vector used in Feedforward.
@@ -75,7 +75,7 @@ class Bias():
               data: Matrix of size (times x 1 x self.n). Each element is "bias" sampled from distribution.
             
             Outputs:
-              bootstrap_data: Element vector corresponding to index_vector from data
+              bootstrap_data: Element vector corresponding to index_vector from data.
         '''
         bootstrap_data = np.zeros((1, self.n))  # Same size.
         for i in range(len(index_vector)):
@@ -94,7 +94,7 @@ class Bias():
             Inputs:
               lst: A list of samples we use to update.
               times: Number of times we sampled. 
-                It's also the number of elements in lst.
+                  It's also the number of elements in lst.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
         # When normal, the distribution parameters are mu and sigma.
