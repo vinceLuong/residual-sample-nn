@@ -220,10 +220,10 @@ class Network():
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
             dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
-            self.lyr[ind+1].b -= lrate * dense_dEdb 
+            self.lyr[ind+1].b = self.lyr[ind+1].bias_vector.mu - lrate * dense_dEdb
             self.W[ind] = self.weight_matrix[ind].mu - lrate * matrix_dEdW
             
-    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, bootstrap = False, progress=True):
+    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, threshold = 0.5, bootstrap = False, progress=True):
         '''
             Network.Learn(inputs, targets, lrate=0.05, epochs=1, times = 100, bootstrap = False, progress=True)
 
@@ -238,10 +238,12 @@ class Network():
               bootstrap: Boolean. If true, using bootstrap to sample.
                   Otherwise, sample using distribution parameters. Default is False.
               progress (Boolean) indicates whether to show cost. Default is True.
+              threshold used to create residual for sampling
         '''
         # Initialize a dataframe to store 4D weight and bias results.
         #weight = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
         #bias = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
+        self.th = threshold
         weight = []
         bias = []
         for k in range((self.n_layers-1)):
@@ -297,14 +299,12 @@ class Network():
                   default is None, which is the normal neural network setup.
               prior_dist_weight is the prior distribution biases follow,
                   default is None, which is the normal neural network setup.
-              threshold used to create residual for sampling
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers.
         self.W = []
         self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
         self.cost_history = []  # keeps track of the cost as learning progresses.
-        self.th = threshold
         
         # Two common types of networks.
         # The member variable self.Loss refers to one of the implemented.

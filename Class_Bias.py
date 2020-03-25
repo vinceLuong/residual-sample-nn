@@ -19,7 +19,7 @@ class Bias():
         # When distribution is gaussian
         if self.dis == 'gaussian':
             #self.mu = np.zeros((1, self.n))
-            self.sigma = np.ones((1, self.n))
+            self.sigma = np.random.uniform(low = 0, high = 1, size=(1, self.n))
             self.mu = np.random.uniform(low = -1, high = 1, size=(1, self.n))
 
     def Initialize_Bootstrap(self, times):

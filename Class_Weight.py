@@ -21,7 +21,7 @@ class Weight():
         # When prior weight distribution is normal
         if self.dis == 'gaussian':
             #self.mu = np.zeros((self.m, self.n))
-            self.sigma = np.ones((self.m, self.n))
+            self.sigma = np.random.uniform(low=0, high=1, size=(self.m, self.n))
             self.mu = np.random.uniform(low=-1, high=1, size=(self.m, self.n))
     
 
