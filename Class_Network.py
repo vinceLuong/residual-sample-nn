@@ -123,7 +123,6 @@ def gradMSE(y, t):
 
 class Network():
 
-    
     def FeedForward(self, x, bootstrap):
         '''
             y = net.FeedForward(x)
@@ -156,7 +155,38 @@ class Network():
             self.lyr[i+1].h = self.lyr[i+1].sigma()
         return self.lyr[-1].h
 
-    
+    def Predict(self, x):
+        '''
+            y = net.FeedForward(x)
+
+            Runs the network forward, starting with x as input.
+            Returns the activity of the output layer.
+
+            All node use Logistic
+            Note: The activation function used for the output layer
+            depends on what self.Loss is set to.
+
+            Inputs:
+              x: The inputs. a (N by X) matrix.
+              bootstrap: Boolean. If true, using bootstrap to sample.
+                  Otherwise, sample using distribution parameters.
+        '''
+        # initialize variables.
+        x = np.array(x)  # Convert input to array, in case it's not
+        self.lyr[0].h = x
+        self.W = []  # Initialize the weights, so that we can append sampled weights.
+        # Loop through all layers.
+        for i in range(self.n_layers - 1):
+            # Sample weights and biases
+            current_weight = self.weight_matrix[i].mu
+            self.lyr[i + 1].b = self.lyr[i + 1].bias_vector.mu
+            # Stored the sampled results to W
+            self.W.append(current_weight)
+            # Update next layer's income currents and activities.
+            self.lyr[i + 1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i + 1].b
+            self.lyr[i + 1].h = self.lyr[i + 1].sigma()
+        return self.lyr[-1].h
+
     def BackProp(self, t, lrate=0.05):
         '''
             net.BackProp(targets, weight, bias, lrate=0.05, times)
@@ -315,7 +345,7 @@ class Network():
             Outputs
              E : A scalar. The average loss.
         '''
-        y = self.FeedForward(inputs, False)
+        y = self.Predict(inputs)
         return self.Loss(y, targets)
 
     def ClassificationAccuracy(self, inputs, targets):
@@ -329,7 +359,7 @@ class Network():
               inputs: An array of inputs.
               targets: A list of corresponding targets.
         '''
-        y = self.FeedForward(inputs, False)
+        y = self.Predict(inputs)
         yb = OneHot(y)
         n_incorrect = np.sum(yb!=targets) / 2.
         return 1. - float(n_incorrect) / NSamples(inputs)
