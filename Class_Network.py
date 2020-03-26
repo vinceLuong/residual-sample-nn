@@ -220,10 +220,10 @@ class Network():
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
             dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
-            self.lyr[ind+1].b -= lrate * dense_dEdb 
+            self.lyr[ind+1].b = self.lyr[ind+1].bias_vector.mu - lrate * dense_dEdb
             self.W[ind] = self.weight_matrix[ind].mu - lrate * matrix_dEdW
             
-    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, bootstrap = False, progress=True):
+    def Learn(self, inputs, targets, lrate=0.05, epochs=1, times = 100, threshold = 0.5, bootstrap = False, progress=True):
         '''
             Network.Learn(inputs, targets, lrate=0.05, epochs=1, times = 100, bootstrap = False, progress=True)
 
@@ -238,10 +238,12 @@ class Network():
               bootstrap: Boolean. If true, using bootstrap to sample.
                   Otherwise, sample using distribution parameters. Default is False.
               progress (Boolean) indicates whether to show cost. Default is True.
+              threshold used to create residual for sampling
         '''
         # Initialize a dataframe to store 4D weight and bias results.
         #weight = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
         #bias = pd.DataFrame(index = range(times), columns=range(self.n_layers-1))
+        self.th = threshold
         weight = []
         bias = []
         for k in range((self.n_layers-1)):
@@ -297,14 +299,12 @@ class Network():
                   default is None, which is the normal neural network setup.
               prior_dist_weight is the prior distribution biases follow,
                   default is None, which is the normal neural network setup.
-              threshold used to create residual for sampling
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers.
         self.W = []
         self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
         self.cost_history = []  # keeps track of the cost as learning progresses.
-        self.th = threshold
         
         # Two common types of networks.
         # The member variable self.Loss refers to one of the implemented.
@@ -363,3 +363,63 @@ class Network():
         yb = OneHot(y)
         n_incorrect = np.sum(yb!=targets) / 2.
         return 1. - float(n_incorrect) / NSamples(inputs)
+
+
+
+if __name__ == "__main__":
+    # 5 Classes in 8-Dimensional Space
+    np.random.seed(15)
+    noise = 0.1
+    InputClasses = np.array([[1, 0, 1, 0, 0, 1, 1, 0],
+                             [0, 1, 0, 1, 0, 1, 0, 1],
+                             [0, 1, 1, 0, 1, 0, 0, 1],
+                             [1, 0, 0, 0, 1, 0, 1, 1],
+                             [1, 0, 0, 1, 0, 1, 0, 1]], dtype=float)
+    OutputClasses = np.array([[1, 0, 0, 0, 0],
+                              [0, 1, 0, 0, 0],
+                              [0, 0, 1, 0, 0],
+                              [0, 0, 0, 1, 0],
+                              [0, 0, 0, 0, 1]], dtype=float)
+    n_input = np.shape(InputClasses)[1]
+    n_output = np.shape(OutputClasses)[1]
+    n_classes = np.shape(InputClasses)[0]
+
+    # Create a training dataset
+    n_samples = 100
+    training_output = []
+    training_input = []
+    for idx in range(n_samples):
+        k = np.random.randint(n_classes)
+        x = InputClasses[k, :] + np.random.normal(size=n_input) * noise
+        t = OutputClasses[k, :]
+        training_input.append(x)
+        training_output.append(t)
+
+    # Create a test dataset
+    n_samples = 100
+    test_output = []
+    test_input = []
+    for idx in range(n_samples):
+        k = np.random.randint(n_classes)
+        x = InputClasses[k, :] + np.random.normal(size=n_input) * noise
+        t = OutputClasses[k, :]
+        test_input.append(x)
+        test_output.append(t)
+
+    train = [np.array(training_input), np.array(training_output)]
+    test = [np.array(test_input), np.array(test_output)]
+    net = Network([n_input, 6, n_output], type='classifier', prior_dist_weight=['gaussian', 'gaussian'],
+                  prior_dist_bias=['gaussian', 'gaussian', 'gaussian'])
+
+    # Evaluate it before training
+    CE = net.Evaluate(train[0], train[1])
+    accuracy = net.ClassificationAccuracy(train[0], train[1])
+    print('Cross Entropy = ' + str(CE))
+    print('     Accuracy = ' + str(accuracy * 100.) + '%')
+
+    net.Learn(train[0], train[1], epochs=100, lrate=0.1, times=100, threshold=1, bootstrap=False, progress=True)
+    layer = 1
+    print(net.lyr[layer].bias_vector.mu)
+    print(net.lyr[layer].bias_vector.sigma)
+    print(net.weight_matrix[layer - 1].mu)
+    print(net.weight_matrix[layer - 1].sigma)

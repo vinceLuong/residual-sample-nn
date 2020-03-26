@@ -19,7 +19,7 @@ class Bias():
         # When distribution is gaussian
         if self.dis == 'gaussian':
             #self.mu = np.zeros((1, self.n))
-            self.sigma = np.ones((1, self.n))
+            self.sigma = np.random.uniform(low = 0, high = 1, size=(1, self.n))
             self.mu = np.random.uniform(low = -1, high = 1, size=(1, self.n))
 
     def Initialize_Bootstrap(self, times):
@@ -108,4 +108,8 @@ class Bias():
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
             # Update sigma using sample standard deviation.
-            self.sigma = np.sqrt(np.sum(np.power(lst, 2)) / times - np.power(self.mu, 2))
+            sigma = np.zeros(lst[0].shape)
+            for i in range(len(lst)):
+                difference = lst[i] - self.mu
+                sigma = sigma + np.power(difference, 2) / len(lst)
+            self.sigma = sigma
