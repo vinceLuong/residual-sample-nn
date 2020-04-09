@@ -601,4 +601,3 @@ if __name__ == "__main__":
     print(net.lyr[layer].bias_vector.sigma)
     print(net.weight_matrix[layer - 1].mu)
     print(net.weight_matrix[layer - 1].sigma)
-
