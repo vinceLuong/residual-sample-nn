@@ -506,7 +506,7 @@ class Network():
             y = np.zeros(np.shape(self.lyr[-1].h))
             for _ in range(times):
                 y += self.FeedForward(inputs)
-        return self.Loss(y, targets)
+        return self.Loss(y/times, targets)
 
     def ClassificationAccuracy(self, inputs, targets, times = 1):
         '''
@@ -533,6 +533,8 @@ class Network():
                 y += self.FeedForward(inputs)
         # If type = classifier, we use OneHot encoding.
         if self.type == 'classifier':
+            # No need to take average since the result 
+            # for OneHot encoding Will be the same.
             yb = OneHot(y)
             n_incorrect = np.sum(yb!=targets) / 2.
             accuracy = 1. - float(n_incorrect) / NSamples(inputs)
