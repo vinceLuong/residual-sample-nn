@@ -503,7 +503,7 @@ class Network():
         if times == 1:
             y = self.Predict(inputs)
         else:
-            y = np.zeros(np.shape(self.lyr[-1].h))
+            y = np.zeros(np.shape(targets))
             for _ in range(times):
                 y += self.FeedForward(inputs)
         return self.Loss(y/times, targets)
@@ -528,7 +528,7 @@ class Network():
             y = self.Predict(inputs)
         # Else, sample from the distribution.
         else:
-            y = np.zeros(np.shape(self.lyr[-1].h))
+            y = np.zeros(np.shape(targets))
             for _ in range(times):
                 y += self.FeedForward(inputs)
         # If type = classifier, we use OneHot encoding.
