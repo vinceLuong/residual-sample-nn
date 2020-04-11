@@ -540,7 +540,7 @@ class Network():
             accuracy = 1. - float(n_incorrect) / NSamples(inputs)
         # Otherwise type = bernoulli, we set the value to one if > 0.5.
         elif self.type == 'bernoulli':
-            y = y / NSamples(y)
+            y = y / times
             yb = np.where(y < 0.5, 0, 1)
             accuracy = accuracy_score(yb, targets)
         return accuracy
