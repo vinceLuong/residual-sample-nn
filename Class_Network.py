@@ -312,9 +312,9 @@ class Network():
             self.lyr[ind+1].b -= lrate * dense_dEdb
             self.W[ind] -= lrate * matrix_dEdW
             
-    def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False, progress=True):
+    def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            Network.Learn(inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, bootstrap = False, progress=True)
+            Network.Learn(inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, bootstrap = False)
 
             Run through the dataset 'epochs' number of times, each time we sample the distribution
             weight and bias follows 'times' times to update the distribution parameters.
@@ -331,7 +331,10 @@ class Network():
                   However, it converges to zero. Therefore we use coefficient.
               bootstrap: Boolean. If true, using bootstrap to sample.
                   Otherwise, sample using distribution parameters. Default is False.
-              progress (Boolean) indicates whether to show cost. Default is True.
+
+            Outputs:
+              progress: An (epochs)x1 array with cost in the column.
+              
         '''
         # Setting threshold, later used in backprop.
         self.th = threshold
@@ -362,13 +365,8 @@ class Network():
             for idx in range(self.n_layers-1):
                 self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
                 self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
-            if progress:
-                self.cost_history.append(self.Evaluate(inputs, targets))
-        ###################################################################
-        ##if progress:
-        ##    _ = self.FeedForward(inputs)
-        ##    self.cost_history.append(self.Loss(self.lyr[-1].h, targets))
-        ###################################################################
+            self.cost_history.append(self.Evaluate(inputs, targets))
+        return np.array(self.cost_history)
 
     def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
@@ -393,13 +391,11 @@ class Network():
                   Otherwise, sample using distribution parameters. Default is False.
 
             Outputs:
-              progress: An (epochs)x2 array with epoch in the first column, and
-                      cost in the second column.
+              progress: An (epochs)x1 array with cost in the column.
         '''
         # Initialize matrices to store 4D weight and bias results.
         weight = []
         bias = []
-        loss_history = []
         for _ in range((self.n_layers-1)):
             weight.append([0]*(times))
             bias.append([0]*(times))
@@ -413,7 +409,7 @@ class Network():
                 self.weight_matrix[i].Initialize_Bootstrap(times)
                 self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
         # For each epoch.
-        for k in range(epochs):
+        for _ in range(epochs):
             # In each epoch, running FeedForward and BackProp "times" times.
             batches = MakeBatches(inputs, targets, batch_size=batch_size, shuffle=True)
             for mini_batch in batches:
@@ -427,10 +423,9 @@ class Network():
                      # Then Update each connection weights and bias vector.
                 for idx in range(self.n_layers-1):
                     self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
-                    self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)   
-            loss_history.append([k, self.Evaluate(inputs, targets)])
-            print('Epoch '+str(k)+': cost '+str(loss_history[-1]))
-        return np.array(loss_history)
+                    self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
+            self.cost_history.append(self.Evaluate(inputs, targets))
+        return np.array(self.cost_history)
     
     def __init__(self, sizes, type='classifier', pdw=None, pdb=None):
         '''
@@ -603,7 +598,7 @@ if __name__ == "__main__":
     print('Cross Entropy = ' + str(CE))
     print('     Accuracy = ' + str(accuracy * 100.) + '%')
 
-    net.Learn(train[0], train[1], epochs=100, lrate=0.1, times=100, threshold=0.5, bootstrap=False, progress=True)
+    net.Learn(train[0], train[1], epochs=100, lrate=0.1, times=100, threshold=0.5, bootstrap=False)
     layer = 1
     print(net.lyr[layer].bias_vector.mu)
     print(net.lyr[layer].bias_vector.sigma)
