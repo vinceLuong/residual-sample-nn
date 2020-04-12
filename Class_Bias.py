@@ -37,7 +37,6 @@ class Bias():
                 bias = np.random.normal(self.mu, self.sigma, size=[1,self.n])
                 self.bootstrap_matrix.append(bias)
 
-
     def Sample(self, bootstrap):
         '''
             bias = Sample(bootstrap)

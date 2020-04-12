@@ -41,7 +41,7 @@ class Weight():
                 weight = np.random.normal(self.mu, self.sigma, size=[self.m,self.n])
                 self.bootstrap_matrix.append(weight)
 
-    def Sample(self, bootstrap):
+    def Sample(self, bootstrap):    
         '''
             weight = Sample(bootstrap)
 

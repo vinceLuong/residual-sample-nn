@@ -136,7 +136,6 @@ def CategoricalCE(y, t):
     dEdy = -np.sum(t * np.log(y))
     return dEdy / N
 
-
 def Shuffle(inputs, targets):
     '''
         s_inputs, s_targets = Shuffle(inputs, targets)
@@ -155,7 +154,6 @@ def Shuffle(inputs, targets):
     np.random.shuffle(data)
     s_inputs, s_targets = zip(*data)
     return np.array(s_inputs), np.array(s_targets)
-
 
 def MakeBatches(data_in, data_out, batch_size=10, shuffle=True):
     '''
@@ -193,7 +191,6 @@ def MakeBatches(data_in, data_out, batch_size=10, shuffle=True):
         else:
             batches.append([din , dout])
     return batches
-
 
 class Network():
 
@@ -258,7 +255,6 @@ class Network():
             self.lyr[i + 1].h = self.lyr[i + 1].sigma()
         return self.lyr[-1].h
 
-
     def TopGradient(self, y, t):
         '''
             dEdz = net.TopGradient(targets)
@@ -280,7 +276,6 @@ class Network():
             return ( y - t ) / len(t)
         return self.gradLoss(self.lyr[-1].h, t) * self.lyr[-1].sigma_p() / len(t)
 
-
     def BackProp(self, t, lrate=1):
         '''
             net.BackProp(targets, weight, bias, lrate=1)
@@ -294,21 +289,22 @@ class Network():
              lrate: learning rate
         '''
         t = np.array(t)  # Convert t to an array, in case it's not.
-        # Initialize variables.
-        ### Code to set threshold
+        # Set threshold: if within threshold, no changes
+        # Otherwise, set the value to 0.5.
         res_prep = self.lyr[-1].h - t
         cond = abs(res_prep) < self.th
         y = np.where(cond, 0.5, self.lyr[-1].h)
         targ = np.where(cond, 0.5, t)
-        ###
+        # Initialize top gradient.
         dEdz = self.TopGradient(y, targ)
         for ind in range(self.n_layers-2 ,-1, -1):
-            # Use sample mean to update, ignore the variance.
-            weights = self.W[ind] ##################
+            # Use backpropogation to update weights/biases.
+            weights = self.W[ind]
             dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
             dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
+            # Store the updated weights/biases in lyr.b and W.
             self.lyr[ind+1].b -= lrate * dense_dEdb
             self.W[ind] -= lrate * matrix_dEdW
             
@@ -334,9 +330,8 @@ class Network():
 
             Outputs:
               progress: An (epochs)x1 array with cost in the column.
-              
         '''
-        # Setting threshold, later used in backprop.
+        # Setting threshold, later used in self.backprop.
         self.th = threshold
         # Setting the boolean variable bootstrap.
         self.bootstrap = bootstrap
@@ -370,9 +365,9 @@ class Network():
 
     def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            progress = net.SGD(inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, bootstrap = False)
+            progress = net.MBGD(inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, bootstrap = False)
 
-            Performs Stochastic Gradient Descent on the network.
+            Performs Mini-Batch Gradient Descent on the network.
             Run through the dataset in batches 'epochs' number of times, incrementing the
             network weights after each batch. For each epoch, it shuffles the dataset.
 
@@ -410,8 +405,9 @@ class Network():
                 self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
         # For each epoch.
         for _ in range(epochs):
-            # In each epoch, running FeedForward and BackProp "times" times.
+            # Make the batchs.
             batches = MakeBatches(inputs, targets, batch_size=batch_size, shuffle=True)
+            # For each batch, run Feedforward/Backprop "times" times
             for mini_batch in batches:
                 for j in range(times):
                     _ = self.FeedForward(mini_batch[0])
@@ -420,7 +416,7 @@ class Network():
                     for i in range(self.n_layers-1):
                         weight[i][j] = self.W[i]
                         bias[i][j] = self.lyr[i+1].b
-                     # Then Update each connection weights and bias vector.
+                # Then Update each connection weights and bias vector.
                 for idx in range(self.n_layers-1):
                     self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
                     self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
@@ -444,10 +440,8 @@ class Network():
                    'bernoulli':  logistic, cross entropy
                    'classifier': softmax, categorical cross entropy
                    'regression': linear, mean squared error
-              pdw: The prior distribution weights follow,
-                  default is None, which is the normal neural network setup.
-              pdb: The prior distribution biases follow,
-                  default is None, which is the normal neural network setup.
+              pdw: The prior distribution weights follow. Default is 'gaussian'.
+              pdb: The prior distribution biases follow. Default is 'gaussian'.
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers.
@@ -501,8 +495,10 @@ class Network():
             Outputs
              E : A scalar. The average loss.
         '''
+        # If only evaluate once, use the sample mean for weights/biases.
         if times == 1:
             y = self.Predict(inputs)
+        # Otherwise, weights/biases are sampled from the distribution.
         else:
             y = np.zeros(np.shape(targets))
             for _ in range(times):
@@ -523,7 +519,7 @@ class Network():
         # Handle exceptions.
         if self.type == 'regression':
             return('This function is only used for network of type \'bernoulli\' or \'classifer\'')
-        # Different FeedForward depends on time.
+        # Different FeedForward depends on "time" value.
         # If times == 1, we use distribution mean for weights and biases.
         if times == 1:
             y = self.Predict(inputs)
@@ -541,66 +537,8 @@ class Network():
             accuracy = 1. - float(n_incorrect) / NSamples(inputs)
         # Otherwise type = bernoulli, we set the value to one if > 0.5.
         elif self.type == 'bernoulli':
+            # Take the average for y.
             y = y / times
             yb = np.where(y < 0.5, 0, 1)
             accuracy = accuracy_score(yb, targets)
         return accuracy
-
-
-if __name__ == "__main__":
-    # 5 Classes in 8-Dimensional Space
-    np.random.seed(15)
-    noise = 0.1
-    InputClasses = np.array([[1, 0, 1, 0, 0, 1, 1, 0],
-                             [0, 1, 0, 1, 0, 1, 0, 1],
-                             [0, 1, 1, 0, 1, 0, 0, 1],
-                             [1, 0, 0, 0, 1, 0, 1, 1],
-                             [1, 0, 0, 1, 0, 1, 0, 1]], dtype=float)
-    OutputClasses = np.array([[1, 0, 0, 0, 0],
-                              [0, 1, 0, 0, 0],
-                              [0, 0, 1, 0, 0],
-                              [0, 0, 0, 1, 0],
-                              [0, 0, 0, 0, 1]], dtype=float)
-    n_input = np.shape(InputClasses)[1]
-    n_output = np.shape(OutputClasses)[1]
-    n_classes = np.shape(InputClasses)[0]
-
-    # Create a training dataset
-    n_samples = 100
-    training_output = []
-    training_input = []
-    for idx in range(n_samples):
-        k = np.random.randint(n_classes)
-        x = InputClasses[k, :] + np.random.normal(size=n_input) * noise
-        t = OutputClasses[k, :]
-        training_input.append(x)
-        training_output.append(t)
-
-    # Create a test dataset
-    n_samples = 100
-    test_output = []
-    test_input = []
-    for idx in range(n_samples):
-        k = np.random.randint(n_classes)
-        x = InputClasses[k, :] + np.random.normal(size=n_input) * noise
-        t = OutputClasses[k, :]
-        test_input.append(x)
-        test_output.append(t)
-
-    train = [np.array(training_input), np.array(training_output)]
-    test = [np.array(test_input), np.array(test_output)]
-    net = Network([n_input, 6, n_output], type='classifier', pdw=['gaussian', 'gaussian'],
-                  pdb=['gaussian', 'gaussian', 'gaussian'])
-
-    # Evaluate it before training
-    CE = net.Evaluate(train[0], train[1])
-    accuracy = net.ClassificationAccuracy(train[0], train[1])
-    print('Cross Entropy = ' + str(CE))
-    print('     Accuracy = ' + str(accuracy * 100.) + '%')
-
-    net.Learn(train[0], train[1], epochs=100, lrate=0.1, times=100, threshold=0.5, bootstrap=False)
-    layer = 1
-    print(net.lyr[layer].bias_vector.mu)
-    print(net.lyr[layer].bias_vector.sigma)
-    print(net.weight_matrix[layer - 1].mu)
-    print(net.weight_matrix[layer - 1].sigma)
