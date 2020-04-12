@@ -312,7 +312,7 @@ class Network():
             self.lyr[ind+1].b -= lrate * dense_dEdb
             self.W[ind] -= lrate * matrix_dEdW
             
-    def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, bootstrap = False, progress=True):
+    def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False, progress=True):
         '''
             Network.Learn(inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, bootstrap = False, progress=True)
 
@@ -324,8 +324,11 @@ class Network():
               lrate: The learning rate (try 0.001 to 0.5).
               epochs: The number of times to go through the training data.
               times: The number of times we sample weights and biases. Default is 100.
-              Threshold: If y - t < threshold, we will ignore the change. 
+              threshold: If y - t < threshold, we will ignore the change. 
                   It's Used to create residual for sampling.
+              coefficient: Sigma = coefficient * mean. Default is 0.05.
+                  Note: Usually we use sample variance to update sigma. 
+                  However, it converges to zero. Therefore we use coefficient.
               bootstrap: Boolean. If true, using bootstrap to sample.
                   Otherwise, sample using distribution parameters. Default is False.
               progress (Boolean) indicates whether to show cost. Default is True.
@@ -357,17 +360,17 @@ class Network():
                     bias[i][j] = self.lyr[i+1].b
             # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
-                self.weight_matrix[idx].Update(weight[idx], times, bootstrap)
-                self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap)
+                self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
+                self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
             if progress:
                 self.cost_history.append(self.Evaluate(inputs, targets))
-        ################################################################
+        ###################################################################
         ##if progress:
         ##    _ = self.FeedForward(inputs)
         ##    self.cost_history.append(self.Loss(self.lyr[-1].h, targets))
-        ################################################################
+        ###################################################################
 
-    def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, bootstrap = False):
+    def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
             progress = net.SGD(inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, bootstrap = False)
 
@@ -383,6 +386,9 @@ class Network():
               batch_size: The number of samples for each batch. Default is 10.
               Threshold: If y - t < threshold, we will ignore the change. 
                   It's Used to create residual for sampling.
+              coefficient: Sigma = coefficient * mean. Default is 0.05.
+                  Note: Usually we use sample variance to update sigma. 
+                  However, it converges to zero. Therefore we use coefficient.
               bootstrap: Boolean. If true, using bootstrap to sample.
                   Otherwise, sample using distribution parameters. Default is False.
 
@@ -420,8 +426,8 @@ class Network():
                         bias[i][j] = self.lyr[i+1].b
                      # Then Update each connection weights and bias vector.
                 for idx in range(self.n_layers-1):
-                    self.weight_matrix[idx].Update(weight[idx], times, bootstrap)
-                    self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap)   
+                    self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
+                    self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)   
             loss_history.append([k, self.Evaluate(inputs, targets)])
             print('Epoch '+str(k)+': cost '+str(loss_history[-1]))
         return np.array(loss_history)

@@ -86,7 +86,7 @@ class Weight():
                 bootstrap_data[i][j] = data[index_matrix[i][j]][i][j]
         return bootstrap_data
 
-    def Update(self, lst, times, bootstrap):
+    def Update(self, lst, times, bootstrap, coefficient):
         '''
             weight_matrix[index].Update(lst, times)
 
@@ -97,6 +97,9 @@ class Weight():
               times: Number of times we sampled. 
                   It's also the number of elements in lst.
               bootstrap: Boolean, Whether on or not to bootstrap
+              coefficient: Sigma = coefficient * mean.
+                  Note: Usually we use sample variance to update sigma. 
+                  However, it converges to zero. Therefore we use coefficient.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
 
@@ -107,9 +110,5 @@ class Weight():
         elif self.dis == 'gaussian':
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
-            # Update sigma using sample standard deviation.
-            sigma = np.zeros(lst[0].shape)
-            for i in range(len(lst)):
-                difference = lst[i] - self.mu
-                sigma = sigma + np.power(difference, 2) / len(lst)
-            self.sigma = np.sqrt(sigma)
+            # Update sigma using coefficient * self.mu.
+            self.sigma = abs(self.mu) * coefficient
