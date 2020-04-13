@@ -6,14 +6,12 @@ class Weight():
 
     def __init__(self, num_row, num_col, distribution='gaussian'):
         '''
-            weight_matrix = Weight(num_row, num_col, type='gaussian')
+        Creates a Weight class and saves it in the variable "weight_matrix" in class Network.
 
-            Creates a Weight class and saves it in the variable "weight_matrix" in class Network.
-
-            Inputs:
-              num_row: The number of rows there will be in the weight matrix.
-              num_col: The number of columns there will be in the weight matrix.
-              distribution: The distribution class Bias follows. Default is Gaussian.
+        @param num_row: The number of rows there will be in the weight matrix.
+        @param num_col: The number of columns there will be in the weight matrix.
+        @param distribution: The distribution class Bias follows. Default is Gaussian.
+        @returns: None.
         '''
         self.m = num_row    # Number of rows
         self.n = num_col    # Number of columns
@@ -24,15 +22,12 @@ class Weight():
             self.mu = np.zeros((self.m, self.n))
             self.sigma = np.ones((self.m, self.n))
     
-
     def Initialize_Bootstrap(self, times):
         '''
-            weight_matrix[index].Initialize_Bootstrap(times)
+        Initialize the 3D matrix within the class we sample from.
 
-            Initialize the 3D matrix within the class we sample from.
-
-            Inputs:
-              times: The number of times we sample the weight.
+        @param times: The number of times we sample the weight from prior distribution.
+        @returns: None.
         '''
         self.bootstrap_matrix = []  # Initialze the matrix.
         if self.dis == 'gaussian':
@@ -43,16 +38,11 @@ class Weight():
 
     def Sample(self, bootstrap):    
         '''
-            weight = Sample(bootstrap)
+        Sample the data from the distribution class Weight follows.
 
-            Sample the data from the distribution class Weight follows.
-
-            Inputs:
-              bootstrap: Boolean. If true, using bootstrap to sample.
-                  Otherwise, sample using distribution parameters.
-            
-            Outputs:
-              bias: The weight used in Feedforward.
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters.
+        @returns: (bias), the weight used in Feedforward.
         '''
         if self.dis == 'gaussian':
             # When bootstrap == False, sample from distribution directly.
@@ -67,16 +57,11 @@ class Weight():
 
     def idx2element(self, index_matrix, data):
         '''
-            bootstrap_data = idx2element(index_vector, data)
+        Using index matrix to get element matrix with same dimension.
 
-            Using index matrix to get element matrix with same dimension.
-
-            Inputs:
-              index_vector: Vector of size (1 x self.n). Elements are randomly selected indices.
-              data: Matrix of size (times x 1 x self.n). Each element is "weight" sampled from distribution.
-            
-            Outputs:
-              bootstrap_data: Element vector corresponding to index_vector from data
+        @param index_vector: Vector of size (1 x self.n). Elements are randomly selected indices.
+        @param data: Matrix of size (times x 1 x self.n). Each element is "weight" sampled from distribution.
+        @returns: (bootstrap_data), element vector corresponding to index_vector from data.
         '''
         # bootstrap_data = index_matrix   # Same size.
         bootstrap_data = np.zeros(np.shape(index_matrix))
@@ -88,18 +73,16 @@ class Weight():
 
     def Update(self, lst, times, bootstrap, coefficient):
         '''
-            weight_matrix[index].Update(lst, times)
+        Update distribution parameters using many samples.
 
-            Update distribution parameters using many samples.
-
-            Inputs:
-              lst: A list of samples we use to update.
-              times: Number of times we sampled. 
-                  It's also the number of elements in lst.
-              bootstrap: Boolean, Whether on or not to bootstrap
-              coefficient: Sigma = coefficient * mean.
-                  Note: Usually we use sample variance to update sigma. 
-                  However, it converges to zero. Therefore we use coefficient.
+        @param lst: A list of samples we use to update.
+        @param times: Number of times we sampled. 
+            It's also the number of elements in lst.
+        @param bootstrap: Boolean, Whether on or not to bootstrap
+        @param coefficient: Sigma = coefficient * mean.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @returns: None.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
 

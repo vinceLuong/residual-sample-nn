@@ -8,32 +8,20 @@ from sklearn.metrics import accuracy_score
 # Supplied functions
 def NSamples(x):
     '''
-        n = NSamples(x)
-        
-        Returns the number of samples in a batch of inputs.
-        
-        Input:
-         x: A 2D array. a (N by X) matrix.
-        
-        Output:
-         n: An integer. The number of samples in the input.
+    Calculates the number of samples in a batch of inputs.
+
+    @param x: A 2D array of samples. Size of (number of samples, number of variables).
+    @returns: (n), int, the number of samples in the input.
     '''
     return len(x)
 
 def OneHot(z):
     '''
-        y = OneHot(z)
+    Applies the one-hot function to the vectors in z.
+    Example: OneHot([[0.9, 0.1], [-0.5, 0.1]]) returns np.array([[1,0],[0,1]])
 
-        Applies the one-hot function to the vectors in z.
-        Example:
-          OneHot([[0.9, 0.1], [-0.5, 0.1]])
-          returns np.array([[1,0],[0,1]])
-
-        Input:
-         z: A 2D array of samples.
-
-        Output:
-         y: An array the same shape as z.
+    @param z: A 2D array of samples.
+    @returns: (y), an array the same shape as z.
     '''
     y = []
     # Locate the max of each row
@@ -47,33 +35,23 @@ def OneHot(z):
 
 def CrossEntropy(y, t):
     '''
-        E = CrossEntropy(y, t)
+    Evaluates the mean cross entropy loss between outputs y and targets t.
 
-        Evaluates the mean cross entropy loss between outputs y and targets t.
-
-        Inputs:
-          y: An array holding the network outputs.
-          t: An array holding the corresponding targets.
-
-        Outputs:
-          E: The mean CrossEntropy.
+    @param y: An array holding the network outputs.
+    @param t: An array holding the corresponding targets.
+    @returns: (E), the mean CrossEntropy.
     '''
     E = -np.sum(t*np.log(y) + (1.-t)*np.log(1.-y))
     return E / len(t)
 
 def gradCrossEntropy(y, t):
     '''
-        E = gradCrossEntropy(y, t)
+    Given targets t, evaluates the gradient of the mean cross entropy loss
+    with respect to the output y.
 
-        Given targets t, evaluates the gradient of the mean cross entropy loss
-        with respect to the output y.
-
-        Inputs:
-          y: The array holding the network's output.
-          t: An array holding the corresponding targets.
-
-        Outputs:
-          dEdy: The gradient of CE with respect to output y.
+    @param y: The array holding the network's output.
+    @parm t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of CE with respect to output y.
     '''
     # Initialize parameters.
     dEdy = ( y - t ) / y / (1.-y)
@@ -81,16 +59,11 @@ def gradCrossEntropy(y, t):
 
 def MSE(y, t):
     '''
-        E = MSE(y, t)
+    Evaluates the mean squared error loss between outputs y and targets t.
 
-        Evaluates the mean squared error loss between outputs y and targets t.
-
-        Inputs:
-          y: The array holding the network's output.
-          t: An array holding the corresponding targets.
-
-        Outputs:
-          E: The mean squared error.
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (E), the mean squared error.
     '''
     # Initialize parameters.
     N = NSamples(y)
@@ -100,17 +73,12 @@ def MSE(y, t):
 
 def gradMSE(y, t):
     '''
-        E = gradMSE(y, t)
+    Given targets t, evaluates the gradient of the mean squared error loss
+    with respect to the output y.
 
-        Given targets t, evaluates the gradient of the mean squared error loss
-        with respect to the output y.
-
-        Inputs:
-          y: The array holding the network's output.
-          t: An array holding the corresponding targets.
-
-        Outputs:
-          dEdy: The gradient of MSE with respect to output y.
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of MSE with respect to output y.
     '''
     # Initialize parameters.
     N = NSamples(y)
@@ -120,17 +88,12 @@ def gradMSE(y, t):
 
 def CategoricalCE(y, t):
     '''
-        E = CategoricalCE(y, t)
+    Given targets t, evaluates the gradient of the 
+    categorical cross entropy loss with respect to the output y.
 
-        Given targets t, evaluates the gradient of the 
-        categorical cross entropy loss with respect to the output y.
-
-        Inputs:
-          y: The array holding the network's output.
-          t: An array holding the corresponding targets.
-
-        Outputs:
-          dEdy: The gradient of MSE with respect to output y.
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of MSE with respect to output y.
     '''
     N = NSamples(y)
     dEdy = -np.sum(t * np.log(y))
@@ -138,17 +101,12 @@ def CategoricalCE(y, t):
 
 def Shuffle(inputs, targets):
     '''
-        s_inputs, s_targets = Shuffle(inputs, targets)
+    Randomly shuffles the dataset.
 
-        Randomly shuffles the dataset.
+    @param inputs: An array of inputs.
+    @param targets: An array of corresponding targets.
 
-        Inputs:
-         inputs: An array of inputs.
-         targets: An array of corresponding targets.
-
-        Outputs:
-         s_inputs: The shuffled array of inputs.
-         s_targets: The corresponding shuffled array of targets.
+    @returns: (s_inputs,s_targets), the shuffled array of inputs and corresponding targets.
     '''
     data = list(zip(inputs,targets))
     np.random.shuffle(data)
@@ -157,19 +115,13 @@ def Shuffle(inputs, targets):
 
 def MakeBatches(data_in, data_out, batch_size=10, shuffle=True):
     '''
-    batches = MakeBatches(data_in, data_out, batch_size=10)
-
     Breaks up the dataset into batches of size batch_size.
 
-    Inputs:
-      data_in： A list of inputs.
-      data_out: A list of outputs.
-      batch_size: The number of samples in each batch. Default is 10.
-      shuffle: Boolean. If true, then shuffle samples. Default is True.
-
-    Output:
-      batches is a list containing batches, where each batch is:
-                 [in_batch, out_batch].
+    @param data_in： A list of inputs.
+    @param data_out: A list of outputs.
+    @param batch_size: The number of samples in each batch. Default is 10.
+    @param shuffle: Boolean. If true, then shuffle samples. Default is True.
+    @returns: (batches), a list containing batches, where each batch is: [in_batch, out_batch].
 
     Note: The last batch might be incomplete (smaller than batch_size).
     '''
@@ -196,17 +148,15 @@ class Network():
 
     def FeedForward(self, x):
         '''
-            y = net.FeedForward(x)
+        Runs the network forward, starting with x as input.
+        Returns the activity of the output layer.
 
-            Runs the network forward, starting with x as input.
-            Returns the activity of the output layer.
+        All inner layer use Logistic sigma.
+        Note: The activation function used for the output layer
+        depends on what self.Loss is set to.
 
-            All node use Logistic
-            Note: The activation function used for the output layer
-            depends on what self.Loss is set to.
-
-            Inputs:
-              x: The inputs. a (N by X) matrix.
+        @param x: The inputs. Size of (number of samples, number of variables).
+        @returns: (self.lyr[-1].h), the predicted target.
         '''
         # initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
@@ -226,18 +176,16 @@ class Network():
 
     def Predict(self, x):
         '''
-            y = net.Predict(x)
+        Runs the network forward, starting with x as input.
+        Using distribution mean for weights and biases.
+        Returns the activity of the output layer.
 
-            Runs the network forward, starting with x as input.
-            Using distribution mean for weights and biases.
-            Returns the activity of the output layer.
+        All node use Logistic
+        Note: The activation function used for the output layer
+        depends on what self.Loss is set to.
 
-            All node use Logistic
-            Note: The activation function used for the output layer
-            depends on what self.Loss is set to.
-
-            Inputs:
-              x: The inputs. a (N by X) matrix.
+        @param x: The inputs. Size of (number of samples, number of variables).
+        @returns: (self.lyr[-1].h), the predicted target.
         '''
         # Initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
@@ -257,16 +205,11 @@ class Network():
 
     def TopGradient(self, y, t):
         '''
-            dEdz = net.TopGradient(targets)
+        Computes and returns the gradient of the cost with respect to the input current
+        to the output nodes.
 
-            Computes and returns the gradient of the cost with respect to the input current
-            to the output nodes.
-
-            Inputs:
-              targets is a batch of targets corresponding to the last FeedForward run
-
-            Outputs:
-              dEdz is a batch of gradient vectors corresponding to the output nodes
+        @param targets: A batch of targets corresponding to the last FeedForward run.
+        @returns: (dEdz), a batch of gradient vectors corresponding to the output nodes.
         '''
         if self.type=='classifier':
             return ( y - t ) / len(t)
@@ -278,15 +221,12 @@ class Network():
 
     def BackProp(self, t, lrate=1):
         '''
-            net.BackProp(targets, weight, bias, lrate=1)
+        Given the current network state and targets t, updates the connection
+        weights and biases using the backpropagation algorithm.
             
-            Given the current network state and targets t, updates the connection
-            weights and biases using the backpropagation algorithm.
-            
-            Inputs:
-              t: An array of targets (number of samples must match the
-                  network's output)
-             lrate: learning rate
+        @param t: An array of targets (number of samples must match the network's output).
+        @param lrate: The learning rate.
+        @returns: None.
         '''
         t = np.array(t)  # Convert t to an array, in case it's not.
         # Set threshold: if within threshold, no changes
@@ -310,26 +250,21 @@ class Network():
             
     def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            Network.Learn(inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, bootstrap = False)
+        Run through the dataset 'epochs' number of times, each time we sample the distribution
+        weight and bias follows 'times' times to update the distribution parameters.
 
-            Run through the dataset 'epochs' number of times, each time we sample the distribution
-            weight and bias follows 'times' times to update the distribution parameters.
-
-            Inputs:
-              data: A list of 2 arrays, one for inputs, and one for targets.
-              lrate: The learning rate (try 0.001 to 0.5).
-              epochs: The number of times to go through the training data.
-              times: The number of times we sample weights and biases. Default is 100.
-              threshold: If y - t < threshold, we will ignore the change. 
-                  It's Used to create residual for sampling.
-              coefficient: Sigma = coefficient * mean. Default is 0.05.
-                  Note: Usually we use sample variance to update sigma. 
-                  However, it converges to zero. Therefore we use coefficient.
-              bootstrap: Boolean. If true, using bootstrap to sample.
-                  Otherwise, sample using distribution parameters. Default is False.
-
-            Outputs:
-              progress: An (epochs)x1 array with cost in the column.
+        @param data: A list of 2 arrays, one for inputs, and one for targets.
+        @param lrate: The learning rate (try 0.001 to 0.5).
+        @param epochs: The number of times to go through the training data.
+        @param times: The number of times we sample weights and biases. Default is 100.
+        @param threshold: If y - t < threshold, we will ignore the change. 
+            It's Used to create residual for sampling.
+        @param coefficient: Sigma = coefficient * mean. Default is 0.05.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters. Default is False.
+        @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
         # Setting threshold, later used in self.backprop.
         self.th = threshold
@@ -365,28 +300,23 @@ class Network():
 
     def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            progress = net.MBGD(inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, bootstrap = False)
+        Performs Mini-Batch Gradient Descent on the network.
+        Run through the dataset in batches 'epochs' number of times, incrementing the
+        network weights after each batch. For each epoch, it shuffles the dataset.
 
-            Performs Mini-Batch Gradient Descent on the network.
-            Run through the dataset in batches 'epochs' number of times, incrementing the
-            network weights after each batch. For each epoch, it shuffles the dataset.
-
-            Inputs:
-              inputs: An array of input samples.
-              targets: A corresponding array of targets.
-              lrate: The learning rate (try 0.001 to 5). Default is 0.05.
-              epochs: The number of times to go through the training data. Default is 1.
-              batch_size: The number of samples for each batch. Default is 10.
-              Threshold: If y - t < threshold, we will ignore the change. 
-                  It's Used to create residual for sampling.
-              coefficient: Sigma = coefficient * mean. Default is 0.05.
-                  Note: Usually we use sample variance to update sigma. 
-                  However, it converges to zero. Therefore we use coefficient.
-              bootstrap: Boolean. If true, using bootstrap to sample.
-                  Otherwise, sample using distribution parameters. Default is False.
-
-            Outputs:
-              progress: An (epochs)x1 array with cost in the column.
+        @param inputs: An array of input samples.
+        @param targets: A corresponding array of targets.
+        @param lrate: The learning rate (try 0.001 to 5). Default is 0.05.
+        @param epochs: The number of times to go through the training data. Default is 1.
+        @param batch_size: The number of samples for each batch. Default is 10.
+        @param Threshold: If y - t < threshold, we will ignore the change. 
+            It's Used to create residual for sampling.
+        @param coefficient: Sigma = coefficient * mean. Default is 0.05.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters. Default is False.
+        @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
         # Initialize matrices to store 4D weight and bias results.
         weight = []
@@ -425,23 +355,20 @@ class Network():
     
     def __init__(self, sizes, type='classifier', pdw=None, pdb=None):
         '''
-            net = Network(sizes, type='classifier')
+        Creates a Network and saves it in the variable 'net'.
 
-            Creates a Network and saves it in the variable 'net'.
-
-            Inputs:
-              sizes: A list of integers specifying the number
-                  of nodes in each layer.
-                  eg. [5, 20, 3] will create a 3-layer network
-                      with 5 input, 20 hidden, and 3 output nodes
-              type: Can be either 'bernoulli', 'classifier' or 'regression',
-                   and sets the activation function on the output layer,
-                   as well as the loss function.
-                   'bernoulli':  logistic, cross entropy
-                   'classifier': softmax, categorical cross entropy
-                   'regression': linear, mean squared error
-              pdw: The prior distribution weights follow. Default is 'gaussian'.
-              pdb: The prior distribution biases follow. Default is 'gaussian'.
+        @param sizes: A list of integers specifying the number
+            of nodes in each layer.
+            eg. [5, 20, 3] will create a 3-layer network
+            with 5 input, 20 hidden, and 3 output nodes
+        @param type: Can be either 'bernoulli', 'classifier' or 'regression',
+            and sets the activation function on the output layer, as well as the loss function.
+            'bernoulli':  Logistic, cross entropy.
+            'classifier': Softmax, categorical cross entropy.
+            'regression': Linear, mean squared error.
+        @param pdw: The prior distribution weights follow. Default is 'gaussian'.
+        @param pdb: The prior distribution biases follow. Default is 'gaussian'.
+        @returns: None.
         '''
         self.n_layers = len(sizes)
         self.lyr = []    # a list of Layers.
@@ -484,16 +411,15 @@ class Network():
 
     def Evaluate(self, inputs, targets, times = 1):
         '''
-            E = net.Evaluate(inputs, targets)
+        Computes the average loss over the supplied dataset.
 
-            Computes the average loss over the supplied dataset.
+        Note: Depends on the value of times, we use distribution mean/sampled values
+        for weights and biases when evaluating the data.
 
-            Inputs:
-             inputs: An array of inputs.
-             targets: A list of corresponding targets.
-
-            Outputs
-             E : A scalar. The average loss.
+        @param inputs: An array of inputs.
+        @param targets: A list of corresponding targets.
+        @param times: Int, the number of samples we evaluate.
+        @returns: (E), scalar. The average loss.
         '''
         # If only evaluate once, use the sample mean for weights/biases.
         if times == 1:
@@ -507,14 +433,12 @@ class Network():
 
     def ClassificationAccuracy(self, inputs, targets, times = 1):
         '''
-            a = net.ClassificationAccuracy(data)
-            
-            Returns the fraction (between 0 and 1) of correct one-hot classifications
-            in the dataset.
+        Returns the fraction (between 0 and 1) of correct one-hot classifications
+        in the dataset.
 
-            Inputs:
-              inputs: An array of inputs.
-              targets: A list of corresponding targets.
+        @param inputs: An array of inputs.
+        @param targets: A list of corresponding targets.
+        @returns: (accuracy), the percentage of correctly classified samples.
         '''
         # Handle exceptions.
         if self.type == 'regression':

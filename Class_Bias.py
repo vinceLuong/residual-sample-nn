@@ -6,13 +6,11 @@ class Bias():
 
     def __init__(self, n_nodes, distribution='gaussian'):
         '''
-            bias_vector = Bias(n_nodes, type='gaussian')
+        Creates class Bias and saves it in variable "bias_vector" in class Layer.
 
-            Creates class Bias and saves it in variable "bias_vector" in class Layer.
-
-            Inputs:
-              n_nodes: The number of nodes in the hidden layer
-              distribution: The distribution class Bias follows. Default is Gaussian.
+        @param n_nodes: The number of nodes in the hidden layer
+        @param distribution: The distribution class Bias follows. Default is Gaussian.
+        @returns: None.
         '''
         self.n = n_nodes    # Number of nodes in the hidden layer
         self.dis = distribution # Distribution type
@@ -23,12 +21,10 @@ class Bias():
 
     def Initialize_Bootstrap(self, times):
         '''
-            bias_vector.Initialize_Bootstrap(times)
+        Initialize the 3D matrix within the class we sample from.
 
-            Initialize the 3D matrix within the class we sample from.
-
-            Inputs:
-              times: The number of times we sample the bias.
+        @param times: The number of times we sample the bias.
+        @returns: None.
         '''
         self.bootstrap_matrix= []  # Initialze the matrix.
         if self.dis == 'gaussian':
@@ -39,16 +35,11 @@ class Bias():
 
     def Sample(self, bootstrap):
         '''
-            bias = Sample(bootstrap)
-
-            Sample the data from the distribution class Bias follows.
-
-            Inputs:
-              bootstrap: Boolean. If true, using bootstrap to sample.
-                  Otherwise, sample using distribution parameters.
-            
-            Outputs:
-              bias: The bias vector used in Feedforward.
+        Sample the data from the distribution class Bias follows.
+        
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters.
+        @returns: (bias), the bias vector used in Feedforward.
         '''
         if self.dis == 'gaussian':
             # When bootstrap == False, sample from distribution directly.
@@ -64,16 +55,11 @@ class Bias():
 
     def idx2element(self, index_vector, data):
         '''
-            bootstrap_data = idx2element(index_vector, data)
+        Using index matrix to get element matrix with same dimension.
 
-            Using index matrix to get element matrix with same dimension.
-
-            Inputs:
-              index_vector: Vector of size (1 x self.n). Elements are randomly selected indices.
-              data: Matrix of size (times x 1 x self.n). Each element is "bias" sampled from distribution.
-            
-            Outputs:
-              bootstrap_data: Element vector corresponding to index_vector from data.
+        @param index_vector: Vector of size (1 x self.n). Elements are randomly selected indices.
+        @param data: Matrix of size (times x 1 x self.n). Each element is "bias" sampled from distribution.
+        @returns: (bootstrap_data), element vector corresponding to index_vector from data.
         '''
         bootstrap_data = np.zeros((1, self.n))  # Same size.
         for i in range(len(index_vector)):
@@ -85,20 +71,16 @@ class Bias():
 
     def Update(self, lst, times, bootstrap, coefficient):
         '''
-            bias_vector.Update(lst, times)
-
-            Update distribution parameters using many samples.
-
-            Inputs:
-              lst: A list of samples we use to update.
-              times: Number of times we sampled. 
-                  It's also the number of elements in lst.
-              bootstrap: Boolean, Whether or not to bootstrap.
-              coefficient: Sigma = coefficient * mean.
-                  Note: Usually we use sample variance to update sigma. 
-                  However, it converges to zero. Therefore we use coefficient.
-
-
+        Update distribution parameters using many samples.
+        
+        @param lst: A list of samples we use to update.
+        @param times: Number of times we sampled. 
+            It's also the number of elements in lst.
+        @param bootstrap: Boolean, Whether or not to bootstrap.
+        @param coefficient: Sigma = coefficient * mean.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @returns: None.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
 

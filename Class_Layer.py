@@ -7,14 +7,11 @@ class Layer():
     
     def __init__(self, n_nodes, prior_distribution, act='logistic'):
         '''
-            lyr = Layer(n_nodes, act='logistic')
+        Creates a layer object.
             
-            Creates a layer object.
-            
-            Inputs:
-             n_nodes: The number of nodes in the layer.
-             prior_distribution: the distribution bias follows.
-             act: Specifies the activation function. Use 'logistic' or 'identity'
+        @param n_nodes: The number of nodes in the layer.
+        @param prior_distribution: the distribution bias follows.
+        @param act: Specifies the activation function. Use 'logistic' or 'identity'
         '''
         self.N = n_nodes  # Number of nodes in this layer.
         self.h = []      # Node activities.
