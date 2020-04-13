@@ -1,31 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 class generate_data():
 
-    def __init__(self, mu, std, range_cov, range_coef, range_bias):
+    def __init__(self, n, p, mu, std, range_cov, range_coef, range_bias,seed=100):
         '''
-        generator = generate_data(mu, std, range_cov, range_coef, range_bias)
+        generator = generate_data(mu, std, rng)
 
         Creates a data generator, for all your data generating needs.
 
         Inputs:
+         n: The number of data points requested. (scalar)
+         p: The number of features. (scalar)
          mu: Mean of the noise.
          std: Standard deviation of the noise..
          range_cov: Size of interval for uniform distribution to generate covariates of the data.
          range_coef: Size of interval for uniform distribution to generate coefficients of gen process.
          range_bias: Size of interval for uniform distribution to generate bias of gen process.
         '''
-
+        np.random.seed(seed)
         # Parameters for generating data
         self.mu = mu
         self.std = std
         self.rng = range_cov
         self.rng_coef = range_coef
         self.rng_bias = range_bias
+        self.n = n
+        self.p = p
 
-    def generate(self, n, p, seed=100):
+        # Parameters of generating process.
+        self.coef = np.random.uniform(size=p, low=-self.rng_coef,
+                                      high=self.rng_coef)  # The coefficients for each co-varitate in the data generating process. (1D np.array of shape (p,))
+        self.bias = np.random.uniform(size=1, low=-self.rng_bias,
+                                      high=self.rng_bias)  # The RHS threshold in the data generating process. (scalar)
+
+    def generate(self, seed=100):
         '''
 
         x_data, noisy_labels, true_labels = generator.generate(n, p, seed)
@@ -33,8 +42,6 @@ class generate_data():
         Crates data
 
         Inputs:
-          n: The number of data points requested. (scalar)
-          p: The number of features. (scalar)
           seed: Seed for random generation, can be used to reproduce results. (Integer)
         Outputs:
           Returns 3 items.
@@ -46,14 +53,8 @@ class generate_data():
         # Sets seed for generation of data.
         np.random.seed(seed)
 
-        self.n = n  # Store the number of samples requested.
-        self.p = p  # Store the number of covariates.
-
-        # Parameters of generating process.
-        self.coef = np.random.uniform(size=p, low=-self.rng_coef,
-                                      high=self.rng_coef)  # The coefficients for each co-varitate in the data generating process. (1D np.array of shape (p,))
-        self.bias = np.random.uniform(size=1, low=-self.rng_bias,
-                                      high=self.rng_bias)  # The RHS threshold in the data generating process. (scalar)
+        n = self.n  # Store the number of samples requested.
+        p = self.p  # Store the number of covariates.
 
         # Generating Process.
         eps = np.random.normal(loc=self.mu, scale=self.std, size=n)  # Creates noise to be used in generating y-labels.

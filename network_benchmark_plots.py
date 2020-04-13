@@ -147,10 +147,16 @@ def main():
     test_size = int(config['DATA']['test_size'])
 
     if config['DATA']['dataset'] == "simulated":
-        generator = generate_data.generate_data(0, 3, 5, 2, 2.5) # Maybe add to config file..
-        num_covariates = 2 # number of covariates
-        X_train, y_train, yt = generator.generate(n=train_size, p=num_covariates)
-        X_test,y_test,yt = generator.generate(n=test_size, p=num_covariates)
+        num_cov = int(config['DATA']['num_cov'])
+        mu = float(config['DATA']['mu'])
+        std = float(config['DATA']['std'])
+        range_cov = float(config['DATA']['range_cov'])
+        range_coef = float(config['DATA']['range_coef'])
+        range_bias = float(config['DATA']['range_bias'])
+        generator = generate_data.generate_data(train_size, num_cov,mu, std,
+                                                range_cov, range_coef, range_bias, seed=0)# Maybe add to config file..
+        X_train, y_train, yt = generator.generate(seed=15)
+        X_test,y_test,yt = generator.generate(seed=16)
 
 
     if config['DATA']['dataset'] == "mnist":
