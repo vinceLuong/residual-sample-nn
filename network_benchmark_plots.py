@@ -48,7 +48,7 @@ def keras_test(X_train, X_test, y_train, y_test, h_nodes, epochs, batch_size, lr
     return (history.history['accuracy'], history.history['val_accuracy'])
 
 
-def RSNN(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times, threshold, coefficient, type):
+def RSNN_test(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times, threshold, coefficient, type):
     """
     Trains a regular 3-layer our NN, and returns the accuracy results
 
@@ -100,7 +100,7 @@ def network_benchmark_plots(X_train, X_test, y_train, y_test, rs_nn_params, kera
     :return:
     """
     # Train a RS-NN
-    (RSNN_train_acc, RSNN_test_acc) = RSNN(X_train, X_test, y_train, y_test, int(rs_nn_params['h_nodes']), int(rs_nn_params['epochs']), float(rs_nn_params['lr']), int(rs_nn_params['times']),float(rs_nn_params['threshold']), float(rs_nn_params['coefficient']),type= rs_nn_params['type'])
+    (RSNN_train_acc, RSNN_test_acc) = RSNN_test(X_train, X_test, y_train, y_test, int(rs_nn_params['h_nodes']), int(rs_nn_params['epochs']), float(rs_nn_params['lr']), int(rs_nn_params['times']),float(rs_nn_params['threshold']), float(rs_nn_params['coefficient']),type= rs_nn_params['type'])
 
     # Train a regular NN
     (keras_train_acc, keras_test_acc) = keras_test(X_train, X_test, y_train, y_test, int(keras_params['h_nodes']),
@@ -119,22 +119,24 @@ def network_benchmark_plots(X_train, X_test, y_train, y_test, rs_nn_params, kera
 
     plt.figure(0)
     plt.title("Training Accuracy vs. Epochs)")
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
     plt.plot(rsnn_eps, RSNN_train_acc)
     plt.plot(keras_eps, keras_train_acc)
     plt.plot(decay_eps,decay_train_acc)
     plt.legend(['RSNN', 'Normal NN','NN with decay'])
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
+    plt.savefig('train_acc_benchmark.png')
     plt.show()
 
     plt.figure(1)
     plt.title("Test Accuracy vs. Epochs)")
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
     plt.plot(rsnn_eps, RSNN_test_acc)
     plt.plot(keras_eps, keras_test_acc)
     plt.plot(decay_eps, decay_test_acc)
     plt.legend(['RSNN', 'Normal NN', 'NN with decay'])
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
+    plt.savefig('test_acc_benchmark.png')
     plt.show()
 
 

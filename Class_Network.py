@@ -290,7 +290,9 @@ class Network():
                 # Store the updated weights and biases in the Matrices.
                 for i in range(self.n_layers-1):
                     weight[i][j] = self.W[i]
-                    bias[i][j] = self.lyr[i+1].b
+                    bias[i][j] = self.lyr[i+1].b        
+            self.weight = weight 
+            self.bias = bias
             # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
                 self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
@@ -347,6 +349,8 @@ class Network():
                         weight[i][j] = self.W[i]
                         bias[i][j] = self.lyr[i+1].b
                 # Then Update each connection weights and bias vector.
+                self.weight = weight 
+                self.bias = bias
                 for idx in range(self.n_layers-1):
                     self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
                     self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
