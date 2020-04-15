@@ -160,7 +160,7 @@ def network_benchmark_plots(X_train, X_test, y_train, y_test, rs_nn_params, kera
     plt.plot(keras_eps, keras_cost['train'])
     plt.plot(decay_eps, decay_cost['train'])
     plt.legend(['RSNN', 'Normal NN', 'NN with decay'])
-    plt.savefig('test_cost_benchmark_' + dataset_name + '.png')
+    plt.savefig('train_cost_benchmark_' + dataset_name + '.png')
 
     plt.figure(3)
     plt.title("Test Cost vs. Epochs (" + dataset_name + ")")
