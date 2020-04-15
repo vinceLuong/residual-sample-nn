@@ -34,7 +34,7 @@ def RSNN_param_test(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times
 
     return(acc_train, acc_test)
 
-def network_mcsample_plots(X_train, X_test, y_train, y_test, rs_nn_params, mc_samples, fold=False):
+def network_lrate_plots(X_train, X_test, y_train, y_test, rs_nn_params, tr_samples, fold=False):
     """
     Trains on a data set.
 
@@ -48,61 +48,60 @@ def network_mcsample_plots(X_train, X_test, y_train, y_test, rs_nn_params, mc_sa
     :param rs_nn_params: Dict, parameters used to create and train the residual sameple neural net
     :param keras_params: Dict, parameters used to create and train the keras neural net
     :param decay_params: Dict, parameters used to create and train the keras neural net with decay
-    :param mc_samples: Dict, used to set start,stop, and step size for various mc samples attempted.
+    :param tr_samples: Dict, used to set start,stop, and number of points for various thresholds attempted.
     :param fold: Boolean, used to select whether folds are to be used (only iris).
     :return:
     """
-    mc_trials = np.arange(int(mc_samples['start']), int(mc_samples['stop']) + int(mc_samples['step']),
-                          int(mc_samples['step']))
-    trials = len(mc_trials)
+    tr_trials = np.linspace(float(tr_samples['start']), float(tr_samples['stop']),num = int(tr_samples['points']))
+    trials = len(tr_trials)
     train_acc = [0] * trials  # For storing training accuracies.
     test_acc = [0] * trials  # For storing test accuracies.
     if fold:
         # Train a RS-NN
         splits = len(X_train)
-        for i, num_mcsample in enumerate(mc_trials):
+        for i, num_sample in enumerate(tr_trials):
             for j in range(0, splits):
                 (RSNN_train_acc, RSNN_test_acc) = RSNN_param_test(X_train[j], X_test[j], y_train[j], y_test[j],
                                         int(rs_nn_params['h_nodes']), int(rs_nn_params['epochs']),
-                                            float(rs_nn_params['lr']), num_mcsample,
-                                            float(rs_nn_params['threshold']),
+                                            float(rs_nn_params['lr']), int(rs_nn_params['times']),
+                                            num_sample,
                                             float(rs_nn_params['coefficient']),type= rs_nn_params['type'])
                 train_acc[i] += np.array(RSNN_train_acc) / splits
                 test_acc[i] += np.array(RSNN_test_acc) / splits
 
     else:
         # Train a RS-NN
-        for i, num_mcsample in enumerate(mc_trials):
+        for i, num_sample in enumerate(tr_trials):
             (RSNN_train_acc, RSNN_test_acc) = RSNN_param_test(X_train, X_test, y_train, y_test,
-                                                                 int(rs_nn_params['h_nodes']),
-                                                                 int(rs_nn_params['epochs']),
-                                                                 float(rs_nn_params['lr']), num_mcsample,
-                                                                 float(rs_nn_params['threshold']),
-                                                                 float(rs_nn_params['coefficient']),
-                                                                 type=rs_nn_params['type'])
+                                                              int(rs_nn_params['h_nodes']), int(rs_nn_params['epochs']),
+                                                              float(rs_nn_params['lr']), int(rs_nn_params['times']),
+                                                              num_sample,
+                                                              float(rs_nn_params['coefficient']),
+                                                              type=rs_nn_params['type'])
             train_acc[i] = RSNN_train_acc
             test_acc[i] = RSNN_test_acc
 
     # Plot the accuracies
     plt.figure(0)
-    plt.title("Training Accuracy vs. MC Samples")
-    plt.scatter(mc_trials, train_acc)
-    plt.xlabel('MC Samples')
+    plt.title("Training Accuracy vs. Threshold")
+    plt.scatter(tr_trials, train_acc)
+    plt.xlabel('Threshold')
     plt.ylabel('Accuracy')
-    plt.savefig('train_acc_mcsamples.png')
+    plt.savefig('train_acc_trsamples.png')
     plt.show()
 
     plt.figure(1)
-    plt.title("Test Accuracy vs. MC Samples")
-    plt.scatter(mc_trials, test_acc)
-    plt.xlabel('MC Samples')
+    plt.title("Test Accuracy vs. Threshold")
+    plt.scatter(tr_trials, test_acc)
+    plt.xlabel('Threshold')
     plt.ylabel('Accuracy')
-    plt.savefig('test_acc_mcsamples.png')
+    plt.savefig('test_acc_trsamples.png')
     plt.show()
 
 def main():
     config = configparser.ConfigParser()
-    config.read('config_mcsample.ini')
+    config.read('config_threshold.ini')
+    #config.read("config_mcsample.ini")
 
     # select correct data
     train_size = int(config['DATA']['train_size'])
@@ -119,7 +118,7 @@ def main():
                                                 range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
         X_train, y_train, yt = generator.generate(seed=15)
         X_test,y_test,yt = generator.generate(seed=16)
-        network_mcsample_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['MCSAMPLE'])
+        network_lrate_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['THRESHOLD'])
 
     if config['DATA']['dataset'] == "mnist":
         import mnist_loader
@@ -128,7 +127,7 @@ def main():
         y_train = np.array(train_full[1][:train_size])
         X_test = np.array(test_full[0][:test_size])
         y_test = np.array(test_full[1][:test_size])
-        network_mcsample_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['MCSAMPLE'])
+        network_lrate_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['THRESHOLD'])
 
     if config['DATA']['dataset'] == "iris":
         from sklearn import datasets
@@ -153,7 +152,7 @@ def main():
             # test
             Xtest.append(X_train[test_index])
             ytest.append(y_train[test_index])
-        network_mcsample_plots(Xtr, Xtest, ytr, ytest, config['RS NN PARAMS'], config['MCSAMPLE'], fold=fold)
+        network_lrate_plots(Xtr, Xtest, ytr, ytest, config['RS NN PARAMS'], config['THRESHOLD'], fold=fold)
 
     # run benchmarking function
 
