@@ -12,8 +12,8 @@ class Bias():
         @param distribution: The distribution class Bias follows. Default is Gaussian.
         @returns: None.
         '''
-        self.n = n_nodes    # Number of nodes in the hidden layer
-        self.dis = distribution # Distribution type
+        self.n = abs(int(n_nodes))    # Number of nodes in the hidden layer
+        self.dis = str(distribution) # Distribution type
         # When distribution is gaussian
         if self.dis == 'gaussian':
             self.mu = np.zeros((1, self.n))
@@ -26,6 +26,8 @@ class Bias():
         @param times: The number of times we sample the bias.
         @returns: None.
         '''
+        # Ensures datatype.
+        times = abs(int(times))
         self.bootstrap_matrix= []  # Initialze the matrix.
         if self.dis == 'gaussian':
             for _ in range(times):
@@ -41,6 +43,7 @@ class Bias():
             Otherwise, sample using distribution parameters.
         @returns: (bias), the bias vector used in Feedforward.
         '''
+        bootstrap = bool(bootstrap)
         if self.dis == 'gaussian':
             # When bootstrap == False, sample from distribution directly.
             if not bootstrap:
@@ -83,7 +86,9 @@ class Bias():
         @returns: None.
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
-
+        times = abs(int(times))
+        coefficient = abs(int(times))
+        bootstrap = bool(bootstrap)
         if bootstrap:
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
@@ -91,5 +96,5 @@ class Bias():
         elif self.dis == 'gaussian':
             # Update mu using sample mean.
             self.mu = np.sum(lst, 0) / times
-            # Update sigma using coefficient * self.mu
+            # Update sigma using coefficient * self.mu, need to be non-negative.
             self.sigma = abs(self.mu) * coefficient

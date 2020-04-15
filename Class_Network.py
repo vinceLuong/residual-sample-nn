@@ -5,7 +5,7 @@ from Class_Layer import *
 from Class_Weight import *
 from sklearn.metrics import accuracy_score
 
-# Supplied functions
+# Supplied functions.
 def NSamples(x):
     '''
     Calculates the number of samples in a batch of inputs.
@@ -13,6 +13,8 @@ def NSamples(x):
     @param x: A 2D array of samples. Size of (number of samples, number of variables).
     @returns: (n), int, the number of samples in the input.
     '''
+    # Ensures x is a numpy array.
+    x = np.array(x)
     return len(x)
 
 def OneHot(z):
@@ -23,6 +25,8 @@ def OneHot(z):
     @param z: A 2D array of samples.
     @returns: (y), an array the same shape as z.
     '''
+    # Ensures z is a numpy array.
+    z = np.array(z)
     y = []
     # Locate the max of each row
     for zz in z:
@@ -41,6 +45,9 @@ def CrossEntropy(y, t):
     @param t: An array holding the corresponding targets.
     @returns: (E), the mean CrossEntropy.
     '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
     E = -np.sum(t*np.log(y) + (1.-t)*np.log(1.-y))
     return E / len(t)
 
@@ -53,6 +60,9 @@ def gradCrossEntropy(y, t):
     @parm t: An array holding the corresponding targets.
     @returns: (dEdy), the gradient of CE with respect to output y.
     '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
     # Initialize parameters.
     dEdy = ( y - t ) / y / (1.-y)
     return dEdy / len(t)
@@ -65,6 +75,9 @@ def MSE(y, t):
     @param t: An array holding the corresponding targets.
     @returns: (E), the mean squared error.
     '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
     # Initialize parameters.
     N = NSamples(y)
     E = 1/2 * np.sum(np.power(y - t, 2))
@@ -80,6 +93,9 @@ def gradMSE(y, t):
     @param t: An array holding the corresponding targets.
     @returns: (dEdy), the gradient of MSE with respect to output y.
     '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
     # Initialize parameters.
     N = NSamples(y)
     dEdy = (y - t)
@@ -95,6 +111,9 @@ def CategoricalCE(y, t):
     @param t: An array holding the corresponding targets.
     @returns: (dEdy), the gradient of MSE with respect to output y.
     '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
     N = NSamples(y)
     dEdy = -np.sum(t * np.log(y))
     return dEdy / N
@@ -105,9 +124,11 @@ def Shuffle(inputs, targets):
 
     @param inputs: An array of inputs.
     @param targets: An array of corresponding targets.
-
     @returns: (s_inputs,s_targets), the shuffled array of inputs and corresponding targets.
     '''
+    # Ensures inputs and targets are numpy arrays.
+    inputs = np.array(inputs)
+    targets = np.array(targets)
     data = list(zip(inputs,targets))
     np.random.shuffle(data)
     s_inputs, s_targets = zip(*data)
@@ -125,6 +146,15 @@ def MakeBatches(data_in, data_out, batch_size=10, shuffle=True):
 
     Note: The last batch might be incomplete (smaller than batch_size).
     '''
+    # Ensures data_in, data_out are numpy arrays.
+    data_in = np.array(data_in)
+    data_out = np.array(data_out)
+    # In this line, int() ensures batch_size is a integer, 
+    # abs() will check batch_size datatype,
+    # also make sure it's a non-negative value.
+    batch_size = abs(int(batch_size))
+    # This ensures shuffle will be a boolean.
+    shuffle = bool(shuffle)
     N = len(data_in) # Number of samples.
     r = range(N) # Indexes.
     if shuffle:
@@ -149,6 +179,7 @@ class Network():
     def FeedForward(self, x):
         '''
         Runs the network forward, starting with x as input.
+        Using sampled weights and biases from distribution.
         Returns the activity of the output layer.
 
         All inner layer use Logistic sigma.
@@ -161,23 +192,23 @@ class Network():
         # initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
         self.lyr[0].h = x
-        self.W = [] # Initialize the weights, so that we can append sampled weights.
+        self.SampledW = [] # Initialize the weights, so that we can append sampled weights.
         # Loop through all layers.
         for i in range(self.n_layers-1):
             # Sample weights and biases
             current_weight = self.weight_matrix[i].Sample(self.bootstrap)
-            self.lyr[i+1].b = self.lyr[i+1].bias_vector.Sample(self.bootstrap)
+            self.lyr[i+1].SampledBias = self.lyr[i+1].bias_vector.Sample(self.bootstrap)
             # Stored the sampled results to W
-            self.W.append(current_weight)
+            self.SampledW.append(current_weight)
             # Update next layer's income currents and activities.
-            self.lyr[i+1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i+1].b
+            self.lyr[i+1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i+1].SampledBias
             self.lyr[i+1].h = self.lyr[i+1].sigma()
         return self.lyr[-1].h
 
     def Predict(self, x):
         '''
         Runs the network forward, starting with x as input.
-        Using distribution mean for weights and biases.
+        Using "distribution mean" for weights and biases.
         Returns the activity of the output layer.
 
         All node use Logistic
@@ -190,16 +221,16 @@ class Network():
         # Initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
         self.lyr[0].h = x
-        self.W = []  # Initialize the weights, so that we can append sampled weights.
+        self.SampledW = []  # Initialize the weights, so that we can append sampled weights.
         # Loop through all layers.
         for i in range(self.n_layers - 1):
             # Set weights and biases using distribution mean.
             current_weight = self.weight_matrix[i].mu
-            self.lyr[i + 1].b = self.lyr[i + 1].bias_vector.mu
+            self.lyr[i + 1].SampledBias = self.lyr[i + 1].bias_vector.mu
             # Stored the sampled results to W
-            self.W.append(current_weight)
+            self.SampledW.append(current_weight)
             # Update next layer's income currents and activities.
-            self.lyr[i + 1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i + 1].b
+            self.lyr[i + 1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i + 1].SampledBias
             self.lyr[i + 1].h = self.lyr[i + 1].sigma()
         return self.lyr[-1].h
 
@@ -211,6 +242,9 @@ class Network():
         @param targets: A batch of targets corresponding to the last FeedForward run.
         @returns: (dEdz), a batch of gradient vectors corresponding to the output nodes.
         '''
+        # Ensures y and t are lists or numpy arrays.
+        y = np.array(y)
+        t = np.array(t)
         if self.type=='classifier':
             return ( y - t ) / len(t)
         elif self.type=='regression':
@@ -228,25 +262,34 @@ class Network():
         @param lrate: The learning rate.
         @returns: None.
         '''
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        lrate = abs(float(lrate))
         t = np.array(t)  # Convert t to an array, in case it's not.
-        # Set threshold: if within threshold, no changes
-        # Otherwise, set the value to 0.5.
-        res_prep = self.lyr[-1].h - t
-        cond = abs(res_prep) < self.th
-        y = np.where(cond, 0.5, self.lyr[-1].h)
-        targ = np.where(cond, 0.5, t)
+        # Set threshold: if within threshold, no changes are made.
+        residual_prep = self.lyr[-1].h - t
+        condition = abs(residual_prep) < self.th
+        # Otherwise, set the value to 0.5 in the case of Classification.
+        if self.type == 'classifier' or self.type == 'bernoulli':
+            modified_y = np.where(condition, 0.5, self.lyr[-1].h)
+            modified_t = np.where(condition, 0.5, t)
+        # In case of 'regression', set the y value to target value.   
+        elif self.type == 'regression':
+            modified_y = np.where(condition, t, self.lyr[-1].h)
+            modified_t = t
         # Initialize top gradient.
-        dEdz = self.TopGradient(y, targ)
+        dEdz = self.TopGradient(modified_y, modified_t)
         for ind in range(self.n_layers-2 ,-1, -1):
             # Use backpropogation to update weights/biases.
-            weights = self.W[ind]
+            weights = self.SampledW[ind]
             dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
             matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
             dhdz = self.lyr[ind].sigma_p()
             dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
-            # Store the updated weights/biases in lyr.b and W.
-            self.lyr[ind+1].b -= lrate * dense_dEdb
-            self.W[ind] -= lrate * matrix_dEdW
+            # Store the updated weights/biases in lyr.SampledBias and W.
+            self.lyr[ind+1].SampledBias -= lrate * dense_dEdb
+            self.SampledW[ind] -= lrate * matrix_dEdW
             
     def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
@@ -266,10 +309,15 @@ class Network():
             Otherwise, sample using distribution parameters. Default is False.
         @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
-        # Setting threshold, later used in self.backprop.
-        self.th = threshold
-        # Setting the boolean variable bootstrap.
-        self.bootstrap = bootstrap
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        self.th = abs(float(threshold)) # Setting threshold, store as a hidden variable, later used in backprop.
+        lrate = abs(float(lrate))
+        times = abs(int(times))
+        coefficient = abs(float(coefficient))
+        # Setting the boolean variable bootstrap, make sure it's a boolean type.
+        self.bootstrap = bool(bootstrap)
         # Initialize a matrices to store 4D weight and bias results.
         weight = []
         bias = []
@@ -281,7 +329,6 @@ class Network():
             for i in range(self.n_layers-1):
                 self.weight_matrix[i].Initialize_Bootstrap(times)
                 self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
-        # Loop through all epochs.
         for _ in range(epochs):
             # In each epoch, running FeedForward and BackProp "times" times.
             for j in range(times):
@@ -289,8 +336,8 @@ class Network():
                 self.BackProp(targets, lrate)
                 # Store the updated weights and biases in the Matrices.
                 for i in range(self.n_layers-1):
-                    weight[i][j] = self.W[i]
-                    bias[i][j] = self.lyr[i+1].b        
+                    weight[i][j] = self.SampledW[i]
+                    bias[i][j] = self.lyr[i+1].SampledBias        
             self.weight = weight 
             self.bias = bias
             # Then Update each connection weights and bias vector.
@@ -320,16 +367,22 @@ class Network():
             Otherwise, sample using distribution parameters. Default is False.
         @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        self.th = abs(float(threshold)) # Setting threshold, store as a hidden variable, later used in backprop.
+        lrate = abs(float(lrate))
+        times = abs(int(times))
+        coefficient = abs(float(coefficient))
+        batch_size = abs(int(batch_size))
+        # Setting the boolean variable bootstrap, make sure it's a boolean type.
+        self.bootstrap = bool(bootstrap)
         # Initialize matrices to store 4D weight and bias results.
         weight = []
         bias = []
         for _ in range((self.n_layers-1)):
             weight.append([0]*(times))
             bias.append([0]*(times))
-        # Setting threshold, later used in backprop.
-        self.th = threshold
-        # Setting the boolean variable bootstrap.
-        self.bootstrap = bootstrap
         # If bootstrap == True, initialize the weights and bias samples.
         if bootstrap:
             for i in range(self.n_layers-1):
@@ -346,8 +399,8 @@ class Network():
                     self.BackProp(mini_batch[1], lrate=lrate)
                     # Store the updated weights and biases in the Matrices.
                     for i in range(self.n_layers-1):
-                        weight[i][j] = self.W[i]
-                        bias[i][j] = self.lyr[i+1].b
+                        weight[i][j] = self.SampledW[i]
+                        bias[i][j] = self.lyr[i+1].SampledBias
                 # Then Update each connection weights and bias vector.
                 self.weight = weight 
                 self.bias = bias
@@ -374,9 +427,36 @@ class Network():
         @param pdb: The prior distribution biases follow. Default is 'gaussian'.
         @returns: None.
         '''
+        # Setting bootstrap to False, since without learn,
+        # bootstrapping the initial values are not that meaningful.
+        self.bootstrap = False
         self.n_layers = len(sizes)
+        # If the user not entering anything, default to gaussian distribution.
+        if not pdw:
+            pdw = ['gaussian'] * (self.n_layers - 1)
+        if not pdb:
+            pdb =  ['gaussian'] * self.n_layers
+        # If user enters a string, instead of list of string, map string to a list.
+        else:
+            if type(pdw) == str:
+                pdw = [pdw] * (self.n_layers - 1)
+            if type(pdb) == str:
+                pdb = [pdb] * (self.n_layers)
+            # If user inputs incorrect number of entries in the list,
+            # if less, append 'gaussian'
+            # if more, take first self.n_layers entries.
+            else:
+                if len(pdw) != self.n_layers - 1:
+                    if len(pdw) < self.n_layers - 1:
+                        pdw = pdw + ['gaussian'] * (self.n_layers - 1 - len(pdw))
+                    elif len(pdw) > self.n_layers - 1:
+                        pdw = pdw[:self.n_layers - 1]
+                if len(pdb) != self.n_layers - 1:
+                    if len(pdb) < self.n_layers - 1:
+                        pdb = pdb + ['gaussian'] * (self.n_layers - 1 - len(pdb))
+                    elif len(pdb) > self.n_layers - 1:
+                        pdb = pdb[:self.n_layers - 1]
         self.lyr = []    # a list of Layers.
-        self.W = []
         self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
         self.cost_history = []  # keeps track of the cost as learning progresses.
         self.type = type  # 'bernoulli', 'classifier', 'regression'
@@ -425,6 +505,10 @@ class Network():
         @param times: Int, the number of samples we evaluate.
         @returns: (E), scalar. The average loss.
         '''
+        # int() makes sure it's a ineteger.
+        # abs() will check times datatype, 
+        # also make sure it's a non-negative value.
+        times = abs(int(times))
         # If only evaluate once, use the sample mean for weights/biases.
         if times == 1:
             y = self.Predict(inputs)
@@ -444,9 +528,14 @@ class Network():
         @param targets: A list of corresponding targets.
         @returns: (accuracy), the percentage of correctly classified samples.
         '''
+        # int() makes sure it's a ineteger.
+        # abs() will check times datatype, 
+        # also make sure it's a non-negative value.
+        times = abs(int(times))
         # Handle exceptions.
         if self.type == 'regression':
-            return('This function is only used for network of type \'bernoulli\' or \'classifer\'')
+            print('This function is only used for network of type \'bernoulli\' or \'classifer\'')
+            return None
         # Different FeedForward depends on "time" value.
         # If times == 1, we use distribution mean for weights and biases.
         if times == 1:
