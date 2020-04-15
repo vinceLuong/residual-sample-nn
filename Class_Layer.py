@@ -23,7 +23,7 @@ class Layer():
         # Activation functions
         if act == 'identity':
             self.sigma = self.Identity
-            self.sigma_p = (lambda : self.Identity_p())
+            self.sigma_p = self.Identity_p
         elif act == 'logistic':
             self.sigma = self.Logistic
             self.sigma_p = self.Logistic_p

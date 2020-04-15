@@ -6,7 +6,19 @@ import random
 from Class_Network import *
 
 class TestNetwork(unittest.TestCase):
-    def Test_Initialization(self):
+    def test_Learn(self):
+        inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
+        label = [[1],[1]]
+        ClassifierNet = Network([2,1], type='classifier',pdw=None,pdb=None)
+        # Check the loss changes.
+        loss_before = ClassifierNet.Evaluate(inputs,label)
+        ClassifierNet.Learn(inputs,label,epochs=1)
+        loss_after = ClassifierNet.Evaluate(inputs,label)
+        
+
+
+class TestNetworkFunctions(unittest.TestCase):
+    def test_Initialization(self):
         # Define different types of network.
         BernoulliNet = Network([2,1], type='bernoulli', pdw='gaussian',pdb=None)
         ClassifierNet = Network([2,1], type='classifier',pdw=None,pdb=None)
@@ -20,9 +32,9 @@ class TestNetwork(unittest.TestCase):
         self.assertEqual(ClassifierNet.Loss, CategoricalCE)
         self.assertEqual(RegressionNet.Loss, MSE)
         # Check gradient of loss function.
-        self.assertEqual(BernoulliNet.Loss, gradCrossEntropy)
-        self.assertEqual(ClassifierNet.Loss, None)
-        self.assertEqual(RegressionNet.Loss, gradMSE)
+        self.assertEqual(BernoulliNet.gradLoss, gradCrossEntropy)
+        self.assertEqual(ClassifierNet.gradLoss, None)
+        self.assertEqual(RegressionNet.gradLoss, gradMSE)
         # Check activation function in first layer, all using logistic.
         self.assertEqual(BernoulliNet.lyr[0].sigma,BernoulliNet.lyr[0].Logistic)
         self.assertEqual(BernoulliNet.lyr[0].sigma_p,BernoulliNet.lyr[0].Logistic_p)
@@ -49,9 +61,9 @@ class TestNetwork(unittest.TestCase):
         self.assertEqual(RegressionNet.lyr[1].bias_vector.dis, 'gaussian')
         # Check distribution parameters are setup correctly or not.
         self.assertEqual(BernoulliNet.weight_matrix[0].mu.all(), np.zeros((2,1)).all())
-        self.assertEqual(BernoulliNet.weight_matrix[0].var.all(), np.ones((2,1)).all())
+        self.assertEqual(BernoulliNet.weight_matrix[0].sigma.all(), np.ones((2,1)).all())
         self.assertEqual(BernoulliNet.lyr[0].bias_vector.mu.all(), np.zeros((1,2)).all())
-        self.assertEqual(BernoulliNet.lyr[0].bias_vector.var.all(), np.ones((1,2)).all())
+        self.assertEqual(BernoulliNet.lyr[0].bias_vector.sigma.all(), np.zeros((1,2)).all())
     
     def test_Evaulate(self):
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
@@ -115,8 +127,7 @@ class TestNetwork(unittest.TestCase):
         self.assertEqual(Bernoulli_TopGradient.all(),Classifier_TopGradient.all())
         self.assertEqual(Bernoulli_TopGradient.all(),Regression_TopGradient.all())
 
-
-class TestFunctions(unittest.TestCase):
+class TestSuppliedFunctions(unittest.TestCase):
 
     def test_NSamples(self):
         x = [1.5,0.3,4]

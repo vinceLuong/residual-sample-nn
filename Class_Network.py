@@ -432,30 +432,28 @@ class Network():
         self.bootstrap = False
         self.n_layers = len(sizes)
         # If the user not entering anything, default to gaussian distribution.
-        if not pdw:
-            pdw = ['gaussian'] * (self.n_layers - 1)
-        if not pdb:
-            pdb =  ['gaussian'] * self.n_layers
+        if not pdw or not pdb:
+            pdw = pdw or ['gaussian'] * (self.n_layers - 1)
+            pdb = pdb or ['gaussian'] * self.n_layers
         # If user enters a string, instead of list of string, map string to a list.
-        else:
-            if type(pdw) == str:
+        if isinstance(pdw,str) or isinstance(pdb,str):
+            if isinstance(pdw,str):
                 pdw = [pdw] * (self.n_layers - 1)
-            if type(pdb) == str:
+            if isinstance(pdb,str):
                 pdb = [pdb] * (self.n_layers)
-            # If user inputs incorrect number of entries in the list,
-            # if less, append 'gaussian'
-            # if more, take first self.n_layers entries.
-            else:
-                if len(pdw) != self.n_layers - 1:
-                    if len(pdw) < self.n_layers - 1:
-                        pdw = pdw + ['gaussian'] * (self.n_layers - 1 - len(pdw))
-                    elif len(pdw) > self.n_layers - 1:
-                        pdw = pdw[:self.n_layers - 1]
-                if len(pdb) != self.n_layers - 1:
-                    if len(pdb) < self.n_layers - 1:
-                        pdb = pdb + ['gaussian'] * (self.n_layers - 1 - len(pdb))
-                    elif len(pdb) > self.n_layers - 1:
-                        pdb = pdb[:self.n_layers - 1]
+        # If user inputs incorrect number of entries in the list,
+        # if less, append 'gaussian'
+        # if more, take first self.n_layers entries.
+        if len(pdw) != self.n_layers - 1:
+            if len(pdw) < self.n_layers - 1:
+                pdw = pdw + ['gaussian'] * (self.n_layers - 1 - len(pdw))
+            elif len(pdw) > self.n_layers - 1:
+                    pdw = pdw[:self.n_layers - 1]
+        if len(pdb) != self.n_layers:
+            if len(pdb) < self.n_layers:
+                pdb = pdb + ['gaussian'] * (self.n_layers - 1 - len(pdb))
+            elif len(pdb) > self.n_layers:
+                pdb = pdb[:self.n_layers]
         self.lyr = []    # a list of Layers.
         self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
         self.cost_history = []  # keeps track of the cost as learning progresses.
