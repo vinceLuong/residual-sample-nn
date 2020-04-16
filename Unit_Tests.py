@@ -7,18 +7,37 @@ from Class_Network import *
 
 class TestNetwork(unittest.TestCase):
     def test_Learn(self):
+        '''
+        Unit test for function "Learn" in Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Objective funcition evaluated after one epoch of learning 
+            is different from it evaluated before learning.
+            Note: More specifically, we should check the objective value 
+            decreses or not, and I included the test in the function.
+            However, since the weights and biases are sampled from
+            some distribution and use sample mean and variance to update.
+            It's possible that the objective value may increase.
+            The test described above are indicated with "May break."
+        Test 2: The cost_history, output of function "Learn" is correctly appending.
+        Test 3: The updated distribution parameters are different from before. 
+            In the case of Gaussian distribution, we are checking mean and variance.
+
+        @param: None.
+        @returns: None.
+        '''
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
         label = [[1],[1]]
         random.seed(1)
         BernoulliNet = Network([2,1], type='bernoulli',pdw=None,pdb=None)
-        # Before one epoch
+        # Before one epoch.
         cost_history_before = BernoulliNet.cost_history.copy # Make sure it will not change.
         loss_before = BernoulliNet.Evaluate(inputs,label)
         weight_mu_before = BernoulliNet.weight_matrix[0].mu
         weight_sigma_before = BernoulliNet.weight_matrix[0].sigma
         bias_mu_before = BernoulliNet.lyr[1].bias_vector.mu
         bias_sigma_before = BernoulliNet.lyr[1].bias_vector.sigma
-        # After one epoch
+        # After one epoch.
         cost_history_after = BernoulliNet.Learn(inputs,label,epochs=1)
         loss_after = BernoulliNet.Evaluate(inputs,label)
         weight_mu_after = BernoulliNet.weight_matrix[0].mu
@@ -26,7 +45,8 @@ class TestNetwork(unittest.TestCase):
         bias_mu_after = BernoulliNet.lyr[1].bias_vector.mu
         bias_sigma_after = BernoulliNet.lyr[1].bias_vector.sigma
         # Check the the loss changes or not after learning one epoch.
-        self.assertNotEqual(loss_before, loss_after)
+        self.assertNotEqual(loss_after, loss_before)
+        self.assertLess(loss_after, loss_before, 'May break due to implementation.')
         # Check the cost history, should be updated already.
         self.assertNotEqual(cost_history_before, cost_history_after)
         self.assertEqual(len(cost_history_after),1)
@@ -37,18 +57,37 @@ class TestNetwork(unittest.TestCase):
         self.assertTrue((bias_sigma_before != bias_sigma_after).all())
 
     def test_MBGD(self):
+        '''
+        Unit test for function "MBGD" in Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Objective funcition evaluated after one epoch of MiniBatch Gradient Descent 
+            is different from the value obtained before gradient descent.
+            Note: More specifically, we should check the objective value 
+            decreses or not, and I included the test in the function.
+            However, since the weights and biases are sampled from
+            some distribution and use sample mean and variance to update.
+            It's possible that the objective value may increase.
+            The test described above are indicated with "May break."
+        Test 2: The cost_history, output of function "MBGD" is correctly appending.
+        Test 3: The updated distribution parameters are different from before. 
+            In the case of Gaussian distribution, we are checking mean and variance.
+
+        @param: None.
+        @returns: None.
+        '''
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
         label = [[1],[1]]
         random.seed(1)
         BernoulliNet = Network([2,1], type='bernoulli',pdw=None,pdb=None)
-        # Before one epoch
+        # Before one epoch.
         cost_history_before = BernoulliNet.cost_history.copy # Make sure it will not change.
         loss_before = BernoulliNet.Evaluate(inputs,label)
         weight_mu_before = BernoulliNet.weight_matrix[0].mu
         weight_sigma_before = BernoulliNet.weight_matrix[0].sigma
         bias_mu_before = BernoulliNet.lyr[1].bias_vector.mu
         bias_sigma_before = BernoulliNet.lyr[1].bias_vector.sigma
-        # After one epoch
+        # After one epoch.
         cost_history_after = BernoulliNet.MBGD(inputs,label,batch_size=1,epochs=1)
         loss_after = BernoulliNet.Evaluate(inputs,label)
         weight_mu_after = BernoulliNet.weight_matrix[0].mu
@@ -57,6 +96,7 @@ class TestNetwork(unittest.TestCase):
         bias_sigma_after = BernoulliNet.lyr[1].bias_vector.sigma
         # Check the the loss changes or not after learning one epoch.
         self.assertNotEqual(loss_before, loss_after)
+        self.assertLess(loss_after, loss_before, 'May break due to implementation.')
         # Check the cost history, should be updated already.
         self.assertNotEqual(cost_history_before, cost_history_after)
         self.assertEqual(len(cost_history_after),1)
@@ -68,6 +108,20 @@ class TestNetwork(unittest.TestCase):
 
 class TestNetworkFunctions(unittest.TestCase):
     def test_Initialization(self):
+        '''
+        Unit test for Initialization in Neural Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: The hidden variable classifier is correctly initialized.
+        Test 2: The loss function for different type of network is correctly assigned.
+        Test 3: The gradient of loss function is assgined properly.
+        Test 4: Activation function in each layer in network is assigned properly.
+        Test 5: The distributions are initialized correctly.
+        Test 6: The distribution parameters are initialized properly.
+
+        @param: None.
+        @returns: None.
+        '''
         # Define different types of network.
         BernoulliNet = Network([2,1], type='bernoulli', pdw='gaussian',pdb=None)
         ClassifierNet = Network([2,1], type='classifier',pdw=None,pdb=None)
@@ -115,6 +169,20 @@ class TestNetworkFunctions(unittest.TestCase):
         self.assertTrue((BernoulliNet.lyr[0].bias_vector.sigma == np.zeros((1,2))).all())
     
     def test_Evaulate(self):
+        '''
+        Unit test for function "Evaulate" in Neural Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Handle invalue inputs, in this case "float" instead of "int".
+        Test 2: Objective value never less than 0.
+        Test 3: The results should be different, even if we evaluated twice.
+            Note: It is because, when evaluated twice, instead of using
+            distribution mean, we use samples from distribution for
+            weights and biases, therefore the results should be different.
+
+        @param: None.
+        @returns: None.
+        '''
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
         label = [[1],[1]]
         # Define a bernoulli network
@@ -134,9 +202,22 @@ class TestNetworkFunctions(unittest.TestCase):
         self.assertNotEqual(result1,result3)
 
     def test_ClassificationAccuracy(self):
+        '''
+        Unit test for function "ClassificationAccuracy" in Neural Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Regression network doesn't have classification accruacy.
+            Therefore, it shouldn't return anything.
+        Test 2: Returned accuracy from this function should be value between 0, 1.
+        Test 3: Returned accuracy when evaluate multiple times 
+            from this function should be value between 0, 1.
+
+        @param: None.
+        @returns: None.
+        '''
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557],[1.64353, 2.65756]]
         label = [[0,1],[1,0],[1,0]]
-        # Define a different types of networks.
+        # Define different types of networks.
         BernoulliNet = Network([2,2], type='bernoulli',pdw=None,pdb=None)
         ClassifierNet = Network([2,2], type='classifier',pdw=None,pdb=None)
         RegressionNet = Network([2,2], type='regression',pdw=None,pdb=None)
@@ -162,9 +243,18 @@ class TestNetworkFunctions(unittest.TestCase):
         # Therefore, the tests described here will not be included in the unittest.
 
     def test_TopGradient(self):
+        '''
+        Unit test for function "TopGradient" in Neural Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: The 3 gradients in all 3 different networks are the same.
+
+        @param: None.
+        @returns: None.
+        '''
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557],[1.64353, 2.65756]]
         label = [[0,1],[1,0],[1,0]]
-        # Define a different types of networks.
+        # Define different types of networks.
         BernoulliNet = Network([2,2], type='bernoulli',pdw=None,pdb=None)
         ClassifierNet = Network([2,2], type='classifier',pdw=None,pdb=None)
         RegressionNet = Network([2,2], type='regression',pdw=None,pdb=None)
@@ -179,6 +269,16 @@ class TestNetworkFunctions(unittest.TestCase):
 class TestSuppliedFunctions(unittest.TestCase):
 
     def test_NSamples(self):
+        '''
+        Unit test for supplied function "NSamples" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: The results for list/numpy arrays should be the same.
+        Test 2: Check outputs for 2D list and array.
+
+        @param: None.
+        @returns: None.
+        '''
         x = [1.5,0.3,4]
         np_x = np.array([1.5,0.3,4])
         x2d = [[1.5,0.3,4],[4.3,5.9,6.2]]
@@ -189,6 +289,16 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(NSamples(np.array(x2d)), 2)
 
     def test_OneHot(self):
+        '''
+        Unit test for supplied function "OneHot" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Output should be type numpy n dimensional array.
+        Test 2: Check outputs for onehot encoding.
+
+        @param: None.
+        @returns: None.
+        '''
         # Input must be 2D.
         x = [[1.5,0.3,4.7]]
         np_x = np.array(x)
@@ -204,6 +314,16 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(OneHot(np_x)[0][2], 1.)
 
     def test_CrossEntropy(self):
+        '''
+        Unit test for supplied function "CrossEntropy" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Outputs for lists and numpy array should be the same.
+        Test 2: Check outputs, the cross entropy loss.
+
+        @param: None.
+        @returns: None.
+        '''
         y = [[0.2,0.8],[0.3865, 0.6135]]
         t = [[0,1],[1,0]]
         np_y = np.array(y)
@@ -214,6 +334,16 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(CrossEntropy(np_y, np_t), 1.17376696226887)
 
     def test_gradCrossEntropy(self):
+        '''
+        Unit test for supplied function "gradCrossEntropy" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Outputs for lists and numpy array should be the same.
+        Test 2: Check outputs, the gradient for cross entropy.
+
+        @param: None.
+        @returns: None.
+        '''
         y = [[0.2,0.8],[0.3865, 0.6135]]
         t = [[0,1],[1,0]]
         np_y = np.array(y)
@@ -226,6 +356,16 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(gradCrossEntropy(np_y,np_t)[1][0], -1.2936610608020698)
 
     def test_MSE(self):
+        '''
+        Unit test for supplied function "MSE" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Outputs for lists and numpy array should be the same.
+        Test 2: Check outputs, the mean squared error loss.
+
+        @param: None.
+        @returns: None.
+        '''
         y = [5.4354435, 544.534536]
         t = [6, 545]
         np_y = np.array(y)
@@ -236,6 +376,16 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(MSE(np_y, np_t), 0.1338451942470619)
 
     def test_gradMSE(self):
+        '''
+        Unit test for supplied function "gradMSE" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Outputs for lists and numpy array should be the same.
+        Test 2: Check outputs, the gradient for mean squared error loss.
+
+        @param: None.
+        @returns: None.
+        '''
         y = [[5.4354435],[544.534536]]
         t = [[6], [545]]
         np_y = np.array(y)
@@ -248,16 +398,36 @@ class TestSuppliedFunctions(unittest.TestCase):
         self.assertEqual(gradMSE(np_y, np_t)[1][0], -0.2327319999999986)
 
     def test_CategoricalCE(self):
+        '''
+        Unit test for supplied function "CategoricalCE" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Outputs for lists and numpy array should be the same.
+        Test 2: Check outputs, the categorical cross entropy loss.
+
+        @param: None.
+        @returns: None.
+        '''
         y = [0.2,0.3,0.5]
         t = [0,1,0]
         np_y = np.array(y)
         np_t = np.array(t)
         # List should return same results as numpy array.
         self.assertEqual(CategoricalCE(y,t),CategoricalCE(np_y, np_t))
-        # Check MSE output value.
+        # Check CategoricalCE output value.
         self.assertEqual(CategoricalCE(np_y, np_t), 0.40132426810864535)
     
     def test_Shuffle(self):
+        '''
+        Unit test for supplied function "Shuffle" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Check output type is numpy n dimensional array.
+        Test 2: Check outputs are indeed the shuffled inputs.
+
+        @param: None.
+        @returns: None.
+        '''
         y = np.array([[1.87,2.94],[7.324,8.453]])
         t = np.array([[0],[1]])
         # Set seed so the results will be the same.
@@ -275,6 +445,17 @@ class TestSuppliedFunctions(unittest.TestCase):
             self.assertIn(element, t)
 
     def test_MakeBatches(self):
+        '''
+        Unit test for supplied function "MakeBatches" for Network 
+        using unit testingf framework "unittest" in Python.
+        
+        Test 1: Check different "False" boolean values have same output.
+        Test 2: Check the invalid inputs for batch_size are handled.
+        Test 3: Check outputs are the same for two batchses.
+
+        @param: None.
+        @returns: None.
+        '''
         y = np.array([[1.87,2.94],[7.324,8.453]])
         t = np.array([[0],[1]])
         # Since We checked Shuffle above, therefore here for simplicity,
