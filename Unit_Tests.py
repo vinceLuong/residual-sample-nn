@@ -9,12 +9,16 @@ class TestNetwork(unittest.TestCase):
     def test_Learn(self):
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
         label = [[1],[1]]
-        ClassifierNet = Network([2,1], type='classifier',pdw=None,pdb=None)
-        # Check the loss changes.
-        loss_before = ClassifierNet.Evaluate(inputs,label)
-        ClassifierNet.Learn(inputs,label,epochs=1)
-        loss_after = ClassifierNet.Evaluate(inputs,label)
-        
+        BernoulliNet = Network([2,1], type='bernoulli',pdw=None,pdb=None)
+        # Check the the loss changes or not after learning one epoch.
+        cost_history_before = BernoulliNet.cost_history.copy # Make sure it will not change.
+        loss_before = BernoulliNet.Evaluate(inputs,label)
+        cost_history_after = BernoulliNet.Learn(inputs,label,epochs=1)
+        loss_after = BernoulliNet.Evaluate(inputs,label)
+        self.assertNotEqual(loss_before, loss_after)
+        # Check the cost history, should be updated
+        self.assertNotEqual(cost_history_before, cost_history_after)
+        self.assertEqual(len(cost_history_after),1)
 
 
 class TestNetworkFunctions(unittest.TestCase):

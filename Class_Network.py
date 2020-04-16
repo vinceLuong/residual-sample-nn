@@ -267,9 +267,9 @@ class Network():
         # also make sure it's a non-negative value.
         lrate = abs(float(lrate))
         t = np.array(t)  # Convert t to an array, in case it's not.
-        # Set threshold: if within threshold, no changes are made.
         residual_prep = self.lyr[-1].h - t
         condition = abs(residual_prep) < self.th
+        # Set threshold: if within threshold, no changes are made.
         # Otherwise, set the value to 0.5 in the case of Classification.
         if self.type == 'classifier' or self.type == 'bernoulli':
             modified_y = np.where(condition, 0.5, self.lyr[-1].h)
@@ -337,9 +337,7 @@ class Network():
                 # Store the updated weights and biases in the Matrices.
                 for i in range(self.n_layers-1):
                     weight[i][j] = self.SampledW[i]
-                    bias[i][j] = self.lyr[i+1].SampledBias        
-            self.weight = weight 
-            self.bias = bias
+                    bias[i][j] = self.lyr[i+1].SampledBias       
             # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
                 self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
@@ -402,8 +400,6 @@ class Network():
                         weight[i][j] = self.SampledW[i]
                         bias[i][j] = self.lyr[i+1].SampledBias
                 # Then Update each connection weights and bias vector.
-                self.weight = weight 
-                self.bias = bias
                 for idx in range(self.n_layers-1):
                     self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
                     self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
@@ -551,7 +547,7 @@ class Network():
             n_incorrect = np.sum(yb!=targets) / 2.
             accuracy = 1. - float(n_incorrect) / NSamples(inputs)
         # Otherwise type = bernoulli, we set the value to one if > 0.5.
-        elif self.type == 'bernoulli':
+        if self.type == 'bernoulli':
             # Take the average for y.
             y = y / times
             yb = np.where(y < 0.5, 0, 1)

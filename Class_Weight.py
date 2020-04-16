@@ -93,7 +93,7 @@ class Weight():
         '''
         self.bootstrap_matrix = lst # Update bootstrap_matrix.
         times = abs(int(times))
-        coefficient = abs(int(times))
+        coefficient = abs(float(coefficient))
         bootstrap = bool(bootstrap)
         if bootstrap:
             # Update mu using sample mean.
