@@ -1,6 +1,6 @@
 # Standard imports.
 import numpy as np
-from Class_Bias import *
+from Bias import *
 
 # Class Layer.
 class Layer():

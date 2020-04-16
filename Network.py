@@ -1,32 +1,32 @@
-# Network.py
-# (C) Jeff Orchard, 2019
-
+# Standard imports.
 import numpy as np
-from copy import deepcopy
+import pandas as pd
+from Layer import *
+from Weight import *
+from sklearn.metrics import accuracy_score
 
+# Supplied functions.
+def NSamples(x):
+    '''
+    Calculates the number of samples in a batch of inputs.
 
-#============================================================
-#
-# Untility functions
-#
-#============================================================
-# Supplied functions
+    @param x: A 2D array of samples. Size of (number of samples, number of variables).
+    @returns: (n), int, the number of samples in the input.
+    '''
+    # Ensures x is a numpy array.
+    x = np.array(x)
+    return len(x)
 
 def OneHot(z):
     '''
-        y = OneHot(z)
+    Applies the one-hot function to the vectors in z.
+    Example: OneHot([[0.9, 0.1], [-0.5, 0.1]]) returns np.array([[1,0],[0,1]])
 
-        Applies the one-hot function to the vectors in z.
-        Example:
-          OneHot([[0.9, 0.1], [-0.5, 0.1]])
-          returns np.array([[1,0],[0,1]])
-
-        Input:
-         z    is a 2D array of samples
-
-        Output:
-         y    is an array the same shape as z
+    @param z: A 2D array of samples.
+    @returns: (y), an array the same shape as z.
     '''
+    # Ensures z is a numpy array.
+    z = np.array(z)
     y = []
     # Locate the max of each row
     for zz in z:
@@ -37,20 +37,98 @@ def OneHot(z):
     y = np.array(y)
     return y
 
+def CrossEntropy(y, t):
+    '''
+    Evaluates the mean cross entropy loss between outputs y and targets t.
+
+    @param y: An array holding the network outputs.
+    @param t: An array holding the corresponding targets.
+    @returns: (E), the mean CrossEntropy.
+    '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
+    E = -np.sum(t*np.log(y) + (1.-t)*np.log(1.-y))
+    return E / len(t)
+
+def gradCrossEntropy(y, t):
+    '''
+    Given targets t, evaluates the gradient of the mean cross entropy loss
+    with respect to the output y.
+
+    @param y: The array holding the network's output.
+    @parm t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of CE with respect to output y.
+    '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
+    # Initialize parameters.
+    dEdy = ( y - t ) / y / (1.-y)
+    return dEdy / len(t)
+
+def MSE(y, t):
+    '''
+    Evaluates the mean squared error loss between outputs y and targets t.
+
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (E), the mean squared error.
+    '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
+    # Initialize parameters.
+    N = NSamples(y)
+    E = 1/2 * np.sum(np.power(y - t, 2))
+    # Return the mean squared error loss.
+    return E / N
+
+def gradMSE(y, t):
+    '''
+    Given targets t, evaluates the gradient of the mean squared error loss
+    with respect to the output y.
+
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of MSE with respect to output y.
+    '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
+    # Initialize parameters.
+    N = NSamples(y)
+    dEdy = (y - t)
+    # Return the gradient of the mean squared error loss.
+    return dEdy / N
+
+def CategoricalCE(y, t):
+    '''
+    Given targets t, evaluates the gradient of the 
+    categorical cross entropy loss with respect to the output y.
+
+    @param y: The array holding the network's output.
+    @param t: An array holding the corresponding targets.
+    @returns: (dEdy), the gradient of MSE with respect to output y.
+    '''
+    # Ensures y and t are numpy arrays.
+    y = np.array(y)
+    t = np.array(t)
+    N = NSamples(y)
+    dEdy = -np.sum(t * np.log(y))
+    return dEdy / N
+
 def Shuffle(inputs, targets):
     '''
-        s_inputs, s_targets = Shuffle(inputs, targets)
+    Randomly shuffles the dataset.
 
-        Randomly shuffles the dataset.
-
-        Inputs:
-         inputs     array of inputs
-         targets    array of corresponding targets
-
-        Outputs:
-         s_inputs   shuffled array of inputs
-         s_targets  corresponding shuffled array of targets
+    @param inputs: An array of inputs.
+    @param targets: An array of corresponding targets.
+    @returns: (s_inputs,s_targets), the shuffled array of inputs and corresponding targets.
     '''
+    # Ensures inputs and targets are numpy arrays.
+    inputs = np.array(inputs)
+    targets = np.array(targets)
     data = list(zip(inputs,targets))
     np.random.shuffle(data)
     s_inputs, s_targets = zip(*data)
@@ -58,532 +136,420 @@ def Shuffle(inputs, targets):
 
 def MakeBatches(data_in, data_out, batch_size=10, shuffle=True):
     '''
-    batches = MakeBatches(data_in, data_out, batch_size=10)
-
     Breaks up the dataset into batches of size batch_size.
 
-    Inputs:
-      data_in    is a list of inputs
-      data_out   is a list of outputs
-      batch_size is the number of samples in each batch
-      shuffle    shuffle samples first (True)
-
-    Output:
-      batches is a list containing batches, where each batch is:
-                 [in_batch, out_batch]
+    @param data_in： A list of inputs.
+    @param data_out: A list of outputs.
+    @param batch_size: The number of samples in each batch. Default is 10.
+    @param shuffle: Boolean. If true, then shuffle samples. Default is True.
+    @returns: (batches), a list containing batches, where each batch is: [in_batch, out_batch].
 
     Note: The last batch might be incomplete (smaller than batch_size).
     '''
-    N = len(data_in)
-    r = range(N)
+    # Ensures data_in, data_out are numpy arrays.
+    data_in = np.array(data_in)
+    data_out = np.array(data_out)
+    # In this line, int() ensures batch_size is a integer, 
+    # abs() will check batch_size datatype,
+    # also make sure it's a non-negative value.
+    batch_size = abs(int(batch_size))
+    # This ensures shuffle will be a boolean.
+    shuffle = bool(shuffle)
+    N = len(data_in) # Number of samples.
+    r = range(N) # Indexes.
     if shuffle:
         r = np.random.permutation(N)
     batches = []
     for k in range(0, N, batch_size):
-        if k+batch_size<=N:
+        if k + batch_size <= N:
             din = data_in[r[k:k+batch_size]]
             dout = data_out[r[k:k+batch_size]]
+        # Possible Last Batch case.
         else:
             din = data_in[r[k:]]
             dout = data_out[r[k:]]
         if isinstance(din, (list, tuple)):
-            batches.append( [np.stack(din, dim=0) , np.stack(dout, dim=0)] )
+            batches.append([np.stack(din, axis=0),np.stack(dout, axis=0)])
         else:
-            batches.append( [din , dout] )
-
+            batches.append([din , dout])
     return batches
 
-
-# Cost Functions--------------------------
-def CrossEntropy(y, t):
-    '''
-        E = CrossEntropy(y, t)
-
-        Evaluates the mean cross entropy loss between outputs y and targets t.
-
-        Inputs:
-          y is an array holding the network outputs
-          t is an array holding the corresponding targets
-
-        Outputs:
-          E is the mean CE
-    '''
-    #====== REMOVE ABOVE IF YOU DON'T PLAN TO USE THE SOLUTIONS ======
-    # [1] Cross entropy formula
-    E = -np.sum(t*np.log(y) + (1.-t)*np.log(1.-y))
-    return E / len(t)
-
-def gradCrossEntropy(y, t):
-    '''
-        E = gradCrossEntropy(y, t)
-
-        Given targets t, evaluates the gradient of the mean cross entropy loss
-        with respect to the output y.
-
-        Inputs:
-          y is the array holding the network's output
-          t is an array holding the corresponding targets
-
-        Outputs:
-          dEdy is the gradient of CE with respect to output y
-    '''
-    # [1] Compute the gradient of CE w.r.t. output
-    dEdy = ( y - t ) / y / (1.-y)
-    return dEdy / len(t)
-
-def MSE(y, t):
-    '''
-        E = MSE(y, t)
-
-        Evaluates the mean squared error loss between outputs y and targets t.
-
-        Inputs:
-          y is the array holding the network's output
-          t is an array holding the corresponding targets
-
-        Outputs:
-          E is the MSE
-    '''
-    # [1] MSE formula
-    E = np.sum((y-t)**2)/2./len(t)
-    return E
-
-def gradMSE(y, t):
-    '''
-        E = gradMSE(y, t)
-
-        Given targets t, evaluates the gradient of the mean squared error loss
-        with respect to the output y.
-
-        Inputs:
-          y is the array holding the network's output
-          t is an array holding the corresponding targets
-
-        Outputs:
-          dEdy is the gradient of MSE with respect to output y
-    '''
-    # [1] Compute the gradient of MSE w.r.t. output
-    return ( y - t ) / len(t)
-
-def CategoricalCE(outputs, t):
-    return -np.sum(t * np.log(outputs)) / len(t)
-
-
-
-
-#==================================================
-#
-# Layer Class
-#
-#==================================================
-class Layer():
-
-    def __init__(self, n_nodes=0, act='logistic'):
-        '''
-            lyr = Layer(n_nodes, act='logistic')
-
-            Creates a layer object.
-
-            Inputs:
-             n_nodes  the number of nodes in the layer
-             act      specifies the activation function
-                      Use 'logistic' or 'identity'
-        '''
-        self.N = n_nodes  # number of nodes in this layer
-        self.h = []       # node activities
-        self.z = []
-        self.b = np.zeros(self.N)  # biases
-        self.SetActivationFunction(act)
-
-
-    def SetActivationFunction(self, act):
-        if act=='identity':
-            self.act_text = 'identity'
-            self.sigma = self.Identity
-            self.sigma_p = self.Identity_p
-        elif act=='softmax':
-            self.act_text = 'softmax'
-            self.sigma = self.Softmax
-            self.sigma_p = None
-        elif act=='logistic':
-            self.act_text = 'logistic'
-            self.sigma = self.Logistic
-            self.sigma_p = self.Logistic_p
-        else:
-            print('Error: Activation function '+act+' not implemented!')
-            self.act_text = ''
-
-
-    def Save(self, fp):
-        np.save(fp, self.N)
-        np.save(fp, self.act_text)
-        np.save(fp, self.b)
-
-    def Load(self, fp):
-        self.N = np.asscalar( np.load(fp) )
-        act_text = str( np.load(fp) )
-        self.b = np.array( np.load(fp) )
-        self.SetActivationFunction(act_text)
-
-
-    def Logistic(self):
-        return 1. / (1. + np.exp(-self.z))
-    def Logistic_p(self):
-        return self.h * (1.-self.h)
-    def Identity(self):
-        return self.z
-    def Identity_p(self):
-        return np.ones_like(self.h)
-    def Softmax(self):
-        v = np.exp(self.z)
-        s = np.sum(v, axis=1)
-        return v/np.tile(s[:,np.newaxis], [1,np.shape(v)[1]])
-
-
-
-#==================================================
-#
-# Network Class
-#
-#==================================================
 class Network():
-
-    def __init__(self, sizes, type='classifier'):
-        '''
-            net = Network(sizes, type='classifier')
-
-            Creates a Network and saves it in the variable 'net'.
-
-            Inputs:
-              sizes is a list of integers specifying the number
-                  of nodes in each layer
-                  eg. [5, 20, 3] will create a 3-layer network
-                      with 5 input, 20 hidden, and 3 output nodes
-              type can be either 'Bernoulli', 'classifier' or 'regression',
-                   and sets the activation function on the output layer,
-                   as well as the loss function.
-                   'Bernoulli':  logistic, cross entropy
-                   'classifier': softmax, categorical cross entropy
-                   'regression': linear, mean squared error
-        '''
-        self.n_layers = 0 #len(sizes)
-        self.lyr = []    # a list of Layers
-        self.W = []      # Weight matrices, indexed by the layer below it
-
-        self.type = type # 'Bernoulli', 'classifier', 'regression'
-        self.output_activation = None
-        self.SetCostFunction()
-
-        self.cost_history = []  # keeps track of the cost as learning progresses
-
-
-        # Create and add Layers (using logistic for hidden layers)
-        for n in sizes[:-1]:
-            self.AddLayer( Layer(n) )
-        # For the top layer, we use the appropriate activtaion function
-        self.AddLayer( Layer(sizes[-1], act=self.output_activation) )
-
-
-    def AddLayer(self, layer):
-        '''
-            net.AddLayer(layer)
-
-            Adds the layer object to the network and connects it to the preceding layer.
-
-            Inputs:
-              layer is a layer object
-        '''
-        self.lyr.append(layer)
-        self.n_layers += 1
-        # If this isn't our first layer, add connection weights
-        if self.n_layers>=2:
-            m = self.lyr[-1].N
-            n = self.lyr[-2].N
-            temp = np.random.normal(size=[n,m])/np.sqrt(n)
-            self.W.append(temp)
-
-
-    def SetCostFunction(self):
-        if self.type=='Bernoulli':
-            self.Loss = CrossEntropy
-            self.gradLoss = gradCrossEntropy
-            self.output_activation = 'logistic'
-        elif self.type=='classifier':
-            self.Loss = CategoricalCE
-            self.gradLoss = None
-            self.output_activation = 'softmax'
-        elif self.type=='regression':
-            self.Loss = MSE
-            self.gradLoss = gradMSE
-            self.output_activation = 'identity'
-        else:
-            self.Loss = None
-            self.gradLoss = None
-            self.output_activation = 'logistic'
-            print('Error: Network type '+self.type+' not implemented!')
-
-    def Save(self, fname):
-        '''
-            net.Save(fname)
-
-            Saves the Network object to a file.
-
-            Input:
-              fname is a string filename. Should probably use the extension ".npy".
-        '''
-        fp = open(fname, 'wb')
-        np.save(fp, self.n_layers)
-        np.save(fp, self.type)
-        np.save(fp, self.output_activation)
-        for l in self.lyr:
-            l.Save(fp)
-        for w in self.W:
-            np.save(fp, w)
-        fp.close()
-
-    @classmethod
-    def Load(cls, fname):
-        '''
-            net.Load(fname)
-
-            Load a Network object from a file. The object needs to be created already,
-            but Load will alter it. For example,
-
-               >> net = Network.Network()
-               >> net.Load('savednet.npy')
-
-            Input:
-              fname is a string filename
-        '''
-        fp = open(fname, 'rb')
-        n_layers = np.asscalar( np.load(fp) ) # self.n_layers is incremented as we call AddLayer
-        net = cls([1,1])
-        net.lyr = []
-        net.n_layers = 0
-        net.type = str( np.load(fp) )
-        net.SetCostFunction()
-        net.output_activation = str( np.load(fp) )
-        # Load layers, one at a time
-        for k in range(n_layers):
-            l = Layer()
-            l.Load(fp)
-            net.AddLayer(l)
-        # Load weight matrices, one at a time
-        net.W = []
-        for k in range(n_layers-1):
-            w = np.array( np.load(fp) )
-            net.W.append(w)
-        fp.close()
-        return net
-
-
-    def FeedForwardFrom(self, idx, h):
-        '''
-           y = net.FeedForwardFrom(idx, h)
-
-           Sets the state of layer idx to h, and then performs a FeedForward
-           pass from that layer to the output layer.
-
-           Inputs:
-             idx     index of layer to set
-             h       array holding a batch of hidden states
-
-           Output:
-             y       array of outputs corresponding to the hidden states
-        '''
-        self.lyr[idx].h = h[:]
-        for pre,post,W in zip(self.lyr[idx:-1], self.lyr[idx+1:], self.W[idx:]):
-            # [1] Calc. (and record) input current to next layer
-            post.z = pre.h @ W + post.b
-
-            # [1] Use activation function to get activities
-            post.h = post.sigma()
-
-        # Return activity of output layer
-        return self.lyr[-1].h
-
 
     def FeedForward(self, x):
         '''
-            y = net.FeedForward(x)
+        Runs the network forward, starting with x as input.
+        Using sampled weights and biases from distribution.
+        Returns the activity of the output layer.
 
-            Runs the network forward, starting with x as input.
-            Returns the activity of the output layer.
+        All inner layer use Logistic sigma.
+        Note: The activation function used for the output layer
+        depends on what self.Loss is set to.
 
-            All node use
-            Note: The activation function used for the output layer
-            depends on what self.Loss is set to.
+        @param x: The inputs. Size of (number of samples, number of variables).
+        @returns: (self.lyr[-1].h), the predicted target.
         '''
+        # initialize variables.
         x = np.array(x)  # Convert input to array, in case it's not
-
-        self.lyr[0].h = x # [1] Set input layer
-
-        # Loop over connections...
-        for pre,post,W in zip(self.lyr[:-1], self.lyr[1:], self.W):
-
-            # [1] Calc. (and record) input current to next layer
-            post.z = pre.h @ W + post.b
-
-            # [1] Use activation function to get activities
-            post.h = post.sigma()
-
-        # Return activity of output layer
+        self.lyr[0].h = x
+        self.SampledW = [] # Initialize the weights, so that we can append sampled weights.
+        # Loop through all layers.
+        for i in range(self.n_layers-1):
+            # Sample weights and biases
+            current_weight = self.weight_matrix[i].Sample(self.bootstrap)
+            self.lyr[i+1].SampledBias = self.lyr[i+1].bias_vector.Sample(self.bootstrap)
+            # Stored the sampled results to W
+            self.SampledW.append(current_weight)
+            # Update next layer's income currents and activities.
+            self.lyr[i+1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i+1].SampledBias
+            self.lyr[i+1].h = self.lyr[i+1].sigma()
         return self.lyr[-1].h
 
-    def TopGradient(self, t):
+    def Predict(self, x):
         '''
-            dEdz = net.TopGradient(targets)
+        Runs the network forward, starting with x as input.
+        Using "distribution mean" for weights and biases.
+        Returns the activity of the output layer.
 
-            Computes and returns the gradient of the cost with respect to the input current
-            to the output nodes.
+        All node use Logistic
+        Note: The activation function used for the output layer
+        depends on what self.Loss is set to.
 
-            Inputs:
-              targets is a batch of targets corresponding to the last FeedForward run
-
-            Outputs:
-              dEdz is a batch of gradient vectors corresponding to the output nodes
+        @param x: The inputs. Size of (number of samples, number of variables).
+        @returns: (self.lyr[-1].h), the predicted target.
         '''
+        # Initialize variables.
+        x = np.array(x)  # Convert input to array, in case it's not
+        self.lyr[0].h = x
+        self.SampledW = []  # Initialize the weights, so that we can append sampled weights.
+        # Loop through all layers.
+        for i in range(self.n_layers - 1):
+            # Set weights and biases using distribution mean.
+            current_weight = self.weight_matrix[i].mu
+            self.lyr[i + 1].SampledBias = self.lyr[i + 1].bias_vector.mu
+            # Stored the sampled results to W
+            self.SampledW.append(current_weight)
+            # Update next layer's income currents and activities.
+            self.lyr[i + 1].z = np.matmul(self.lyr[i].h, current_weight) + self.lyr[i + 1].SampledBias
+            self.lyr[i + 1].h = self.lyr[i + 1].sigma()
+        return self.lyr[-1].h
+
+    def TopGradient(self, y, t):
+        '''
+        Computes and returns the gradient of the cost with respect to the input current
+        to the output nodes.
+
+        @param targets: A batch of targets corresponding to the last FeedForward run.
+        @returns: (dEdz), a batch of gradient vectors corresponding to the output nodes.
+        '''
+        # Ensures y and t are lists or numpy arrays.
+        y = np.array(y)
+        t = np.array(t)
         if self.type=='classifier':
-            return ( self.lyr[-1].h - t ) / len(t)
+            return ( y - t ) / len(t)
         elif self.type=='regression':
-            return ( self.lyr[-1].h - t ) / len(t)
-        elif self.type=='Bernoulli':
-            return ( self.lyr[-1].h - t ) / len(t)
+            return ( y - t ) / len(t)
+        elif self.type=='bernoulli':
+            return ( y - t ) / len(t)
         return self.gradLoss(self.lyr[-1].h, t) * self.lyr[-1].sigma_p() / len(t)
 
-    def BackProp(self, t, lrate=0.05):
+    def BackProp(self, t, lrate=1):
         '''
-            net.BackProp(targets, lrate=0.05)
-
-            Given the current network state and targets t, updates the connection
-            weights and biases using the backpropagation algorithm.
-
-            Inputs:
-             t      an array of targets (number of samples must match the
-                    network's output)
-             lrate  learning rate
+        Given the current network state and targets t, updates the connection
+        weights and biases using the backpropagation algorithm.
+            
+        @param t: An array of targets (number of samples must match the network's output).
+        @param lrate: The learning rate.
+        @returns: None.
         '''
-        t = np.array(t)  # convert t to an array, in case it's not
-
-        # Error gradient for top layer
-        dEdz = self.TopGradient(t)
-
-        # Loop down through the layers
-        # Start second-from-the-top, and go down to layer 0
-        for i in range(self.n_layers-2, -1, -1):
-            pre = self.lyr[i]
-
-            # Gradient w.r.t. weights
-            dEdW = pre.h.T @ dEdz
-
-            # Gradient w.r.t. biases
-            dEdb = np.sum(dEdz, axis=0)
-
-            # Use Sigma'
-            # Project error gradient down to layer below
-            dEdz = ( dEdz @ self.W[i].T ) * pre.sigma_p()
-
-            # Update weights and biases
-            self.W[i] -= lrate*dEdW
-            self.lyr[i+1].b -= lrate*dEdb
-
-    def Learn(self, inputs, targets, lrate=0.05, epochs=1, progress=True):
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        lrate = abs(float(lrate))
+        t = np.array(t)  # Convert t to an array, in case it's not.
+        residual_prep = self.lyr[-1].h - t
+        condition = abs(residual_prep) < self.th
+        # Set threshold: if within threshold, no changes are made.
+        # Otherwise, set the value to 0.5 in the case of Classification.
+        if self.type == 'classifier' or self.type == 'bernoulli':
+            modified_y = np.where(condition, 0.5, self.lyr[-1].h)
+            modified_t = np.where(condition, 0.5, t)
+        # In case of 'regression', set the y value to target value.   
+        elif self.type == 'regression':
+            modified_y = np.where(condition, t, self.lyr[-1].h)
+            modified_t = t
+        # Initialize top gradient.
+        dEdz = self.TopGradient(modified_y, modified_t)
+        for ind in range(self.n_layers-2 ,-1, -1):
+            # Use backpropogation to update weights/biases.
+            weights = self.SampledW[ind]
+            dense_dEdb = np.array([sum(x) for x in zip(*dEdz)])
+            matrix_dEdW = (dEdz.T @ self.lyr[ind].h).T
+            dhdz = self.lyr[ind].sigma_p()
+            dEdz = np.multiply(dhdz, np.matmul(dEdz, weights.T))
+            # Store the updated weights/biases in lyr.SampledBias and W.
+            self.lyr[ind+1].SampledBias -= lrate * dense_dEdb
+            self.SampledW[ind] -= lrate * matrix_dEdW
+            
+    def Learn(self, inputs, targets, lrate=1, epochs=1, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            Network.Learn(data, lrate=0.05, epochs=1, progress=True)
+        Run through the dataset 'epochs' number of times, each time we sample the distribution
+        weight and bias follows 'times' times to update the distribution parameters.
 
-            Run through the dataset 'epochs' number of times, incrementing the
-            network weights after each epoch.
-
-            Inputs:
-              data is a list of 2 arrays, one for inputs, and one for targets
-              lrate is the learning rate (try 0.001 to 0.5)
-              epochs is the number of times to go through the training data
-              progress (Boolean) indicates whether to show cost
+        @param data: A list of 2 arrays, one for inputs, and one for targets.
+        @param lrate: The learning rate (try 0.001 to 0.5).
+        @param epochs: The number of times to go through the training data.
+        @param times: The number of times we sample weights and biases. Default is 100.
+        @param threshold: If y - t < threshold, we will ignore the change. 
+            It's Used to create residual for sampling.
+        @param coefficient: Sigma = coefficient * mean. Default is 0.05.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters. Default is False.
+        @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
-        try: Learn
-        except NameError:
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        self.th = abs(float(threshold)) # Setting threshold, store as a hidden variable, later used in backprop.
+        lrate = abs(float(lrate))
+        times = abs(int(times))
+        coefficient = abs(float(coefficient))
+        # Setting the boolean variable bootstrap, make sure it's a boolean type.
+        self.bootstrap = bool(bootstrap)
+        # Initialize a matrices to store 4D weight and bias results.
+        weight = []
+        bias = []
+        for _ in range((self.n_layers-1)):
+            weight.append([0]*(times))
+            bias.append([0]*(times))
+        # If bootstrap == True, initialize the weights and bias samples.
+        if bootstrap:
+            for i in range(self.n_layers-1):
+                self.weight_matrix[i].Initialize_Bootstrap(times)
+                self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
+        for _ in range(epochs):
+            # In each epoch, running FeedForward and BackProp "times" times.
+            for j in range(times):
+                _ = self.FeedForward(inputs)
+                self.BackProp(targets, lrate)
+                # Store the updated weights and biases in the Matrices.
+                for i in range(self.n_layers-1):
+                    weight[i][j] = self.SampledW[i]
+                    bias[i][j] = self.lyr[i+1].SampledBias       
+            # Then Update each connection weights and bias vector.
+            for idx in range(self.n_layers-1):
+                self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
+                self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
+            self.cost_history.append(self.Evaluate(inputs, targets))
+        return np.array(self.cost_history)
 
-            #========= YOUR IMPLEMENTATION BELOW =========
-
-            # [1] Perform multiple epochs
-            for k in range(epochs):
-
-                self.FeedForward(inputs)  # [1] FeedForward pass
-                self.BackProp(targets, lrate=lrate)    # [1] BackProp pass
-
-                # [1] Record cost after each epoch if progress=True
-                if progress:
-                    Error = self.Loss(self.lyr[-1].h, targets)
-                    self.cost_history.append(Error)
-                    if np.mod(k, 20)==0:
-                        print('Epoch '+str(k)+': Cost = '+str(Error))
-
-            #========= YOUR IMPLEMENTATION ABOVE =========
-
-        else:
-            Learn(self, inputs, targets, lrate=lrate, epochs=epochs, progress=progress)
-
-    def SGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10):
+    def MBGD(self, inputs, targets, lrate=0.05, epochs=1, batch_size=10, times = 100, threshold = 0, coefficient = 0.05, bootstrap = False):
         '''
-            progress = net.SGD(inputs, targets, lrate=0.05, epochs=1, batch_size=10)
+        Performs Mini-Batch Gradient Descent on the network.
+        Run through the dataset in batches 'epochs' number of times, incrementing the
+        network weights after each batch. For each epoch, it shuffles the dataset.
 
-            Performs Stochastic Gradient Descent on the network.
-            Run through the dataset in batches 'epochs' number of times, incrementing the
-            network weights after each batch. For each epoch, it shuffles the dataset.
-
-            Inputs:
-              inputs  is an array of input samples
-              targets is a corresponding array of targets
-              lrate   is the learning rate (try 0.001 to 5)
-              epochs  is the number of times to go through the training data
-              batch_size is the number of samples for each batch
-
-            Outputs:
-              progress is an (epochs)x2 array with epoch in the first column, and
-                      cost in the second column
+        @param inputs: An array of input samples.
+        @param targets: A corresponding array of targets.
+        @param lrate: The learning rate (try 0.001 to 5). Default is 0.05.
+        @param epochs: The number of times to go through the training data. Default is 1.
+        @param batch_size: The number of samples for each batch. Default is 10.
+        @param Threshold: If y - t < threshold, we will ignore the change. 
+            It's Used to create residual for sampling.
+        @param coefficient: Sigma = coefficient * mean. Default is 0.05.
+            Note: Usually we use sample variance to update sigma. 
+            However, it converges to zero. Therefore we use coefficient.
+        @param bootstrap: Boolean. If true, using bootstrap to sample.
+            Otherwise, sample using distribution parameters. Default is False.
+        @returns: (progress), an (epochs)x1 array with cost in the column.
         '''
-        loss_history = []
-        for k in range(epochs):
+        # float() makes sure it's a number.
+        # abs() will check lrate datatype, 
+        # also make sure it's a non-negative value.
+        self.th = abs(float(threshold)) # Setting threshold, store as a hidden variable, later used in backprop.
+        lrate = abs(float(lrate))
+        times = abs(int(times))
+        coefficient = abs(float(coefficient))
+        batch_size = abs(int(batch_size))
+        # Setting the boolean variable bootstrap, make sure it's a boolean type.
+        self.bootstrap = bool(bootstrap)
+        # Initialize matrices to store 4D weight and bias results.
+        weight = []
+        bias = []
+        for _ in range((self.n_layers-1)):
+            weight.append([0]*(times))
+            bias.append([0]*(times))
+        # If bootstrap == True, initialize the weights and bias samples.
+        if bootstrap:
+            for i in range(self.n_layers-1):
+                self.weight_matrix[i].Initialize_Bootstrap(times)
+                self.lyr[i+1].bias_vector.Initialize_Bootstrap(times)
+        # For each epoch.
+        for _ in range(epochs):
+            # Make the batchs.
             batches = MakeBatches(inputs, targets, batch_size=batch_size, shuffle=True)
+            # For each batch, run Feedforward/Backprop "times" times
             for mini_batch in batches:
-                self.FeedForward(mini_batch[0])
-                self.BackProp(mini_batch[1], lrate=lrate)
-
-            loss_history.append([k, self.Evaluate(inputs, targets)])
-            print('Epoch '+str(k)+': cost '+str(loss_history[-1]))
-
-        return np.array(loss_history)
-
-    def Evaluate(self, inputs, targets):
+                for j in range(times):
+                    _ = self.FeedForward(mini_batch[0])
+                    self.BackProp(mini_batch[1], lrate=lrate)
+                    # Store the updated weights and biases in the Matrices.
+                    for i in range(self.n_layers-1):
+                        weight[i][j] = self.SampledW[i]
+                        bias[i][j] = self.lyr[i+1].SampledBias
+                # Then Update each connection weights and bias vector.
+                for idx in range(self.n_layers-1):
+                    self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
+                    self.lyr[idx+1].bias_vector.Update(bias[idx], times, bootstrap, coefficient)
+            self.cost_history.append(self.Evaluate(inputs, targets))
+        return np.array(self.cost_history)
+    
+    def __init__(self, sizes, type='classifier', pdw=None, pdb=None):
         '''
-            E = net.Evaluate(data)
+        Creates a Network and saves it in the variable 'net'.
 
-            Computes the average loss over the supplied dataset.
-
-            Inputs
-             inputs  is an array of inputs
-             targets is a list of corresponding targets
-
-            Outputs
-             E is a scalar, the average loss
+        @param sizes: A list of integers specifying the number
+            of nodes in each layer.
+            eg. [5, 20, 3] will create a 3-layer network
+            with 5 input, 20 hidden, and 3 output nodes
+        @param type: Can be either 'bernoulli', 'classifier' or 'regression',
+            and sets the activation function on the output layer, as well as the loss function.
+            'bernoulli':  Logistic, cross entropy.
+            'classifier': Softmax, categorical cross entropy.
+            'regression': Linear, mean squared error.
+        @param pdw: The prior distribution weights follow. Default is 'gaussian'.
+        @param pdb: The prior distribution biases follow. Default is 'gaussian'.
+        @returns: None.
         '''
-        y = self.FeedForward(inputs)
-        return self.Loss(y, targets)
+        # Setting bootstrap to False, since without learn,
+        # bootstrapping the initial values are not that meaningful.
+        self.bootstrap = False
+        self.n_layers = len(sizes)
+        # If the user not entering anything, default to gaussian distribution.
+        if not pdw or not pdb:
+            pdw = pdw or ['gaussian'] * (self.n_layers - 1)
+            pdb = pdb or ['gaussian'] * self.n_layers
+        # If user enters a string, instead of list of string, map string to a list.
+        if isinstance(pdw,str) or isinstance(pdb,str):
+            if isinstance(pdw,str):
+                pdw = [pdw] * (self.n_layers - 1)
+            if isinstance(pdb,str):
+                pdb = [pdb] * (self.n_layers)
+        # If user inputs incorrect number of entries in the list,
+        # if less, append 'gaussian'
+        # if more, take first self.n_layers entries.
+        if len(pdw) != self.n_layers - 1:
+            if len(pdw) < self.n_layers - 1:
+                pdw = pdw + ['gaussian'] * (self.n_layers - 1 - len(pdw))
+            elif len(pdw) > self.n_layers - 1:
+                    pdw = pdw[:self.n_layers - 1]
+        if len(pdb) != self.n_layers:
+            if len(pdb) < self.n_layers:
+                pdb = pdb + ['gaussian'] * (self.n_layers - 1 - len(pdb))
+            elif len(pdb) > self.n_layers:
+                pdb = pdb[:self.n_layers]
+        self.lyr = []    # a list of Layers.
+        self.weight_matrix = [] # Weight matrices, indexed by the layer below it.
+        self.cost_history = []  # keeps track of the cost as learning progresses.
+        self.type = type  # 'bernoulli', 'classifier', 'regression'
+        # Two common types of networks.
+        # The member variable self.Loss refers to one of the implemented.
+        # loss functions: MSE, or CrossEntropy.
+        # Call it using self.Loss(t).
+        if type == 'bernoulli':
+            self.classifier = True
+            self.Loss = CrossEntropy
+            self.gradLoss = gradCrossEntropy
+            activation = 'logistic'
+        elif type == 'classifier':
+            self.classifier = True
+            self.Loss = CategoricalCE
+            self.gradLoss = None
+            activation = 'softmax'
+        elif type == 'regression':
+            self.classifier = False
+            self.Loss = MSE
+            self.gradLoss = gradMSE
+            activation = 'identity'
+        else:
+            print('Error, no top gradient available')
 
-    def ClassificationAccuracy(self, inputs, targets):
+        # Create and add Layers (using logistic for hidden layers).
+        for i, e in enumerate(sizes[:-1]):
+            self.lyr.append(Layer(e, pdb[i]))
+        # For the top layer, we use the appropriate activtaion function.
+        self.lyr.append(Layer(sizes[-1], pdb[-1], act=activation))
+        # Initialize the weight matrices.
+        for idx in range(self.n_layers-1):
+            m = self.lyr[idx].N
+            n = self.lyr[idx+1].N
+            self.weight_matrix.append(Weight(m,n,pdw[idx]))
+
+    def Evaluate(self, inputs, targets, times = 1):
         '''
-            a = net.ClassificationAccuracy(data)
+        Computes the average loss over the supplied dataset.
 
-            Returns the fraction (between 0 and 1) of correct one-hot classifications
-            in the dataset.
+        Note: Depends on the value of times, we use distribution mean/sampled values
+        for weights and biases when evaluating the data.
+
+        @param inputs: An array of inputs.
+        @param targets: A list of corresponding targets.
+        @param times: Int, the number of samples we evaluate.
+        @returns: (E), scalar. The average loss.
         '''
-        y = self.FeedForward(inputs)
-        yb = OneHot(y)
-        n_incorrect = np.sum(yb!=targets) / 2.
-        return 1. - float(n_incorrect) / len(inputs)
+        # int() makes sure it's a ineteger.
+        # abs() will check times datatype, 
+        # also make sure it's a non-negative value.
+        times = abs(int(times))
+        # If only evaluate once, use the sample mean for weights/biases.
+        if times == 1:
+            y = self.Predict(inputs)
+        # Otherwise, weights/biases are sampled from the distribution.
+        else:
+            y = np.zeros(np.shape(targets))
+            for _ in range(times):
+                y += self.FeedForward(inputs)
+        return self.Loss(y/times, targets)
 
+    def ClassificationAccuracy(self, inputs, targets, times = 1):
+        '''
+        Returns the fraction (between 0 and 1) of correct one-hot classifications
+        in the dataset.
 
-
-
-
-# end
+        @param inputs: An array of inputs.
+        @param targets: A list of corresponding targets.
+        @returns: (accuracy), the percentage of correctly classified samples.
+        '''
+        # int() makes sure it's a ineteger.
+        # abs() will check times datatype, 
+        # also make sure it's a non-negative value.
+        times = abs(int(times))
+        # Handle exceptions.
+        if self.type == 'regression':
+            print('This function is only used for network of type \'bernoulli\' or \'classifer\'')
+            return None
+        # Different FeedForward depends on "time" value.
+        # If times == 1, we use distribution mean for weights and biases.
+        if times == 1:
+            y = self.Predict(inputs)
+        # Else, sample from the distribution.
+        else:
+            y = np.zeros(np.shape(targets))
+            for _ in range(times):
+                y += self.FeedForward(inputs)
+        # If type = classifier, we use OneHot encoding.
+        if self.type == 'classifier':
+            # No need to take average since the result 
+            # for OneHot encoding Will be the same.
+            yb = OneHot(y)
+            n_incorrect = np.sum(yb!=targets) / 2.
+            accuracy = 1. - float(n_incorrect) / NSamples(inputs)
+        # Otherwise type = bernoulli, we set the value to one if > 0.5.
+        if self.type == 'bernoulli':
+            # Take the average for y.
+            y = y / times
+            yb = np.where(y < 0.5, 0, 1)
+            accuracy = accuracy_score(yb, targets)
+        return accuracy

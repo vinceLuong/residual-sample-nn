@@ -1,11 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class generate_data():
-
+class GenerateData():
     def __init__(self, p, mu, std, range_cov, range_coef, range_bias,seed=100):
         '''
-        generator = generate_data(mu, std, rng)
+        generator = GenerateData(mu, std, rng)
 
         Creates a data generator, for all your data generating needs.
 

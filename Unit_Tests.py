@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import random
 # Import functions that need to be tested.
-from Class_Network import *
+from Network import *
 
 class TestNetwork(unittest.TestCase):
     def test_Learn(self):

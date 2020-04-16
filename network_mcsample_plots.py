@@ -1,5 +1,5 @@
-import Class_Network as Network
-import Class_generate_data as generate_data
+import Network as Network
+import GenerateData as generate_data
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -115,8 +115,8 @@ def main():
         range_cov = float(config['DATA']['range_cov'])
         range_coef = float(config['DATA']['range_coef'])
         range_bias = float(config['DATA']['range_bias'])
-        generator = generate_data.generate_data(num_cov,mu, std,
-                                                range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
+        generator = generate_data.GenerateData(num_cov, mu, std,
+                                               range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
         X_train, y_train, _ = generator.generate(seed=15, sample_size=train_size)
         X_test, y_test, _ = generator.generate(seed=16, sample_size=test_size)
         network_mcsample_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['MCSAMPLE'])

@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0,'C:\\Users\\pmcw9\\Winter 2020\\CS 698\\Project Final Folder\\network files')
-import Class_Network as Network
-import Class_generate_data as generate_data
+import Network as Network
+import GenerateData as generate_data
 import numpy as np
 import matplotlib.pyplot as plt
 import configparser
@@ -124,8 +124,8 @@ def main():
         range_cov = float(config['DATA']['range_cov'])
         range_coef = float(config['DATA']['range_coef'])
         range_bias = float(config['DATA']['range_bias'])
-        generator = generate_data.generate_data(num_cov,mu, std,
-                                                range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
+        generator = generate_data.GenerateData(num_cov, mu, std,
+                                               range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
         X_train, y_train, _ = generator.generate(seed=15, sample_size=train_size)
 
     # Init network
