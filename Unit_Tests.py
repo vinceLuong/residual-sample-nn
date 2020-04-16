@@ -9,17 +9,62 @@ class TestNetwork(unittest.TestCase):
     def test_Learn(self):
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
         label = [[1],[1]]
+        random.seed(1)
         BernoulliNet = Network([2,1], type='bernoulli',pdw=None,pdb=None)
-        # Check the the loss changes or not after learning one epoch.
+        # Before one epoch
         cost_history_before = BernoulliNet.cost_history.copy # Make sure it will not change.
         loss_before = BernoulliNet.Evaluate(inputs,label)
+        weight_mu_before = BernoulliNet.weight_matrix[0].mu
+        weight_sigma_before = BernoulliNet.weight_matrix[0].sigma
+        bias_mu_before = BernoulliNet.lyr[1].bias_vector.mu
+        bias_sigma_before = BernoulliNet.lyr[1].bias_vector.sigma
+        # After one epoch
         cost_history_after = BernoulliNet.Learn(inputs,label,epochs=1)
         loss_after = BernoulliNet.Evaluate(inputs,label)
+        weight_mu_after = BernoulliNet.weight_matrix[0].mu
+        weight_sigma_after = BernoulliNet.weight_matrix[0].sigma
+        bias_mu_after = BernoulliNet.lyr[1].bias_vector.mu
+        bias_sigma_after = BernoulliNet.lyr[1].bias_vector.sigma
+        # Check the the loss changes or not after learning one epoch.
         self.assertNotEqual(loss_before, loss_after)
-        # Check the cost history, should be updated
+        # Check the cost history, should be updated already.
         self.assertNotEqual(cost_history_before, cost_history_after)
         self.assertEqual(len(cost_history_after),1)
+        # Check distribution parameters are updated properly.
+        self.assertTrue((weight_mu_before != weight_mu_after).all())
+        self.assertTrue((weight_sigma_before != weight_sigma_after).all())
+        self.assertTrue((bias_mu_before != bias_mu_after).all())
+        self.assertTrue((bias_sigma_before != bias_sigma_after).all())
 
+    def test_MBGD(self):
+        inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
+        label = [[1],[1]]
+        random.seed(1)
+        BernoulliNet = Network([2,1], type='bernoulli',pdw=None,pdb=None)
+        # Before one epoch
+        cost_history_before = BernoulliNet.cost_history.copy # Make sure it will not change.
+        loss_before = BernoulliNet.Evaluate(inputs,label)
+        weight_mu_before = BernoulliNet.weight_matrix[0].mu
+        weight_sigma_before = BernoulliNet.weight_matrix[0].sigma
+        bias_mu_before = BernoulliNet.lyr[1].bias_vector.mu
+        bias_sigma_before = BernoulliNet.lyr[1].bias_vector.sigma
+        # After one epoch
+        cost_history_after = BernoulliNet.MBGD(inputs,label,batch_size=1,epochs=1)
+        loss_after = BernoulliNet.Evaluate(inputs,label)
+        weight_mu_after = BernoulliNet.weight_matrix[0].mu
+        weight_sigma_after = BernoulliNet.weight_matrix[0].sigma
+        bias_mu_after = BernoulliNet.lyr[1].bias_vector.mu
+        bias_sigma_after = BernoulliNet.lyr[1].bias_vector.sigma
+        # Check the the loss changes or not after learning one epoch.
+        self.assertNotEqual(loss_before, loss_after)
+        # Check the cost history, should be updated already.
+        self.assertNotEqual(cost_history_before, cost_history_after)
+        self.assertEqual(len(cost_history_after),1)
+        # Check distribution parameters are updated properly.
+        self.assertTrue((weight_mu_before != weight_mu_after).all())
+        self.assertTrue((weight_sigma_before != weight_sigma_after).all())
+        self.assertTrue((bias_mu_before != bias_mu_after).all())
+        self.assertTrue((bias_sigma_before != bias_sigma_after).all())
 
 class TestNetworkFunctions(unittest.TestCase):
     def test_Initialization(self):
@@ -64,10 +109,10 @@ class TestNetworkFunctions(unittest.TestCase):
         self.assertEqual(RegressionNet.lyr[0].bias_vector.dis, 'gaussian')
         self.assertEqual(RegressionNet.lyr[1].bias_vector.dis, 'gaussian')
         # Check distribution parameters are setup correctly or not.
-        self.assertEqual(BernoulliNet.weight_matrix[0].mu.all(), np.zeros((2,1)).all())
-        self.assertEqual(BernoulliNet.weight_matrix[0].sigma.all(), np.ones((2,1)).all())
-        self.assertEqual(BernoulliNet.lyr[0].bias_vector.mu.all(), np.zeros((1,2)).all())
-        self.assertEqual(BernoulliNet.lyr[0].bias_vector.sigma.all(), np.zeros((1,2)).all())
+        self.assertTrue((BernoulliNet.weight_matrix[0].mu == np.zeros((2,1))).all())
+        self.assertTrue((BernoulliNet.weight_matrix[0].sigma == np.ones((2,1))).all())
+        self.assertTrue((BernoulliNet.lyr[0].bias_vector.mu == np.zeros((1,2))).all())
+        self.assertTrue((BernoulliNet.lyr[0].bias_vector.sigma == np.zeros((1,2))).all())
     
     def test_Evaulate(self):
         inputs = [[1.53243,0.4354657],[0.468873,1.425436557]]
@@ -127,9 +172,9 @@ class TestNetworkFunctions(unittest.TestCase):
         Bernoulli_TopGradient = BernoulliNet.TopGradient(inputs,label)
         Classifier_TopGradient = ClassifierNet.TopGradient(inputs,label)
         Regression_TopGradient = RegressionNet.TopGradient(inputs,label)
-        # All 3 top gradients should be the same.
-        self.assertEqual(Bernoulli_TopGradient.all(),Classifier_TopGradient.all())
-        self.assertEqual(Bernoulli_TopGradient.all(),Regression_TopGradient.all())
+        # All 3 top gradients should be the same, elements by elements.
+        self.assertTrue((Bernoulli_TopGradient == Classifier_TopGradient).all())
+        self.assertTrue((Bernoulli_TopGradient == Regression_TopGradient).all())
 
 class TestSuppliedFunctions(unittest.TestCase):
 
@@ -216,14 +261,18 @@ class TestSuppliedFunctions(unittest.TestCase):
         y = np.array([[1.87,2.94],[7.324,8.453]])
         t = np.array([[0],[1]])
         # Set seed so the results will be the same.
-        random.seed(1)
         shuffled_y, shuffled_t = Shuffle(y,t)
         # Check output is numpy array.
         self.assertIsInstance(shuffled_y, np.ndarray)
         self.assertIsInstance(shuffled_t, np.ndarray)
-        # Check shuffled output values.
-        self.assertEqual(shuffled_y.all(), y.all())
-        self.assertEqual(shuffled_t.all(), t.all())
+        # Check shuffled output values. 
+        # Since setting seed will not guarantee reproducibility, therefore
+        # Here we only check elements in output is in input. 
+        # But the shuffle is checked implicitly.
+        for element in shuffled_y:
+            self.assertIn(element, y)
+        for element in shuffled_t:
+            self.assertIn(element, t)
 
     def test_MakeBatches(self):
         y = np.array([[1.87,2.94],[7.324,8.453]])
@@ -232,10 +281,10 @@ class TestSuppliedFunctions(unittest.TestCase):
         # We are going to set shuffle = False, and compare all elements in batch1 and 2.
         batch1 = MakeBatches(y,t,batch_size=1,shuffle=0)
         batch2 = MakeBatches(y,t,batch_size=-1,shuffle =False)
-        self.assertEqual(np.array(batch1[0][0]).all(), np.array(batch2[0][0]).all())
-        self.assertEqual(np.array(batch1[0][1]).all(), np.array(batch2[0][1]).all())
-        self.assertEqual(np.array(batch1[1][0]).all(), np.array(batch2[1][0]).all())
-        self.assertEqual(np.array(batch1[1][1]).all(), np.array(batch2[1][1]).all())
+        self.assertTrue((np.array(batch1[0][0]) == np.array(batch2[0][0])).all())
+        self.assertTrue((np.array(batch1[0][1]) == np.array(batch2[0][1])).all())
+        self.assertTrue((np.array(batch1[1][0]) == np.array(batch2[1][0])).all())
+        self.assertTrue((np.array(batch1[1][1]) == np.array(batch2[1][1])).all())
 
 if __name__ == '__main__':
     unittest.main()
