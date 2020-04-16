@@ -114,10 +114,10 @@ def main():
         range_cov = float(config['DATA']['range_cov'])
         range_coef = float(config['DATA']['range_coef'])
         range_bias = float(config['DATA']['range_bias'])
-        generator = generate_data.generate_data(train_size, num_cov,mu, std,
+        generator = generate_data.generate_data(num_cov,mu, std,
                                                 range_cov, range_coef, range_bias, seed=100)# Maybe add to config file..
-        X_train, y_train, yt = generator.generate(seed=15)
-        X_test,y_test,yt = generator.generate(seed=16)
+        X_train, y_train, _ = generator.generate(seed=15, sample_size=train_size)
+        X_test, y_test, _ = generator.generate(seed=16, sample_size=test_size)
         network_lrate_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['LEARNINGRATE'])
 
     if config['DATA']['dataset'] == "mnist":
