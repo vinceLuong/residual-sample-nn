@@ -23,4 +23,7 @@ The testing/benchmarking files are stored under the ```tests``` folder. To run t
 2. Go into the tests, folder and run any of the network testing files. As an example: <br/>
 ```python network_benchmark_plots.py```
 
-3. Configure the tests to your desire of hyperparamaters/dataset with each appropriate config file. As an example, to configure ```network_lrate_plots.py```, edit the ```config_lr.ini``` file.   
+3. Configure the tests to your desire of hyperparamaters/dataset with each appropriate config file. As an example, to configure ```network_lrate_plots.py```, edit the ```config_lr.ini``` file.  The accepted datasets are "simulated", "iris", and "mnist".***   
+
+
+***To run the tests with the MNIST dataset, you will need an appropriate mnist.pkl file in the ```tests``` folder. 
