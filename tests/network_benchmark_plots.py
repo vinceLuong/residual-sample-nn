@@ -1,5 +1,7 @@
-import Network as Network
-import GenerateData as generate_data
+import sys
+sys.path.append("../residual-sample-nn") # for finding the source files
+import GenerateData
+import Network
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,6 +11,7 @@ from keras import optimizers
 from keras import regularizers
 import configparser
 from sklearn.model_selection import train_test_split
+import mnist_loader
 
 
 def keras_test(X_train, X_test, y_train, y_test, h_nodes, epochs, batch_size, lr, weight_decay, cost_fcn):
@@ -72,7 +75,7 @@ def RSNN_test(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times, thre
     out_dim = y_train.shape[1]
 
     #Initialize the network
-    net = Network.Network([in_dim, h_nodes, out_dim], type = type, pdw = ['gaussian']*2, pdb = ['gaussian']*2)
+    net = Network.Network([in_dim, h_nodes, out_dim], type = type, pdw =['gaussian'] * 2, pdb =['gaussian'] * 2)
     acc_train = [0]*epochs # For storing training accuracy.
     acc_test = [0]*epochs # For storing test accuracy.
     cost_train = [0]*epochs
@@ -192,8 +195,8 @@ def main():
         range_cov = float(config['DATA']['range_cov'])
         range_coef = float(config['DATA']['range_coef'])
         range_bias = float(config['DATA']['range_bias'])
-        generator = generate_data.GenerateData(num_cov, mu, std,
-                                               range_cov, range_coef, range_bias, seed=10)# Maybe add to config file..
+        generator = GenerateData.GenerateData(num_cov, mu, std,
+                                              range_cov, range_coef, range_bias, seed=10)# Maybe add to config file..
         X_train, y_train, _ = generator.generate(seed=15, sample_size=train_size)
         X_test, _ , y_test = generator.generate(seed=16, sample_size=test_size)
 
@@ -206,7 +209,6 @@ def main():
         X_train, X_test, y_train, y_test = train_test_split(data.data, y, test_size=test_size, random_state = 5)
 
     elif dataset_name == "mnist":
-        import mnist_loader
         train_full, validate_full, test_full = mnist_loader.load_data_wrapper() # we wont need validate dataset
         X_train = np.array(train_full[0][:train_size])
         y_train = np.array(train_full[1][:train_size])

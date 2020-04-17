@@ -1,9 +1,8 @@
 # Standard imports.
-import numpy as np
-import pandas as pd
 from Layer import *
 from Weight import *
 from sklearn.metrics import accuracy_score
+import numpy as np
 
 # Supplied functions.
 def NSamples(x):
@@ -337,7 +336,9 @@ class Network():
                 # Store the updated weights and biases in the Matrices.
                 for i in range(self.n_layers-1):
                     weight[i][j] = self.SampledW[i]
-                    bias[i][j] = self.lyr[i+1].SampledBias       
+                    bias[i][j] = self.lyr[i+1].SampledBias
+            self.weight = weight
+            self.bias = bias
             # Then Update each connection weights and bias vector.
             for idx in range(self.n_layers-1):
                 self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)
@@ -399,6 +400,8 @@ class Network():
                     for i in range(self.n_layers-1):
                         weight[i][j] = self.SampledW[i]
                         bias[i][j] = self.lyr[i+1].SampledBias
+                self.weight = weight
+                self.bias = bias
                 # Then Update each connection weights and bias vector.
                 for idx in range(self.n_layers-1):
                     self.weight_matrix[idx].Update(weight[idx], times, bootstrap, coefficient)

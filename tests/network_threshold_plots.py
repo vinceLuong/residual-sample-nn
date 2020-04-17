@@ -1,9 +1,12 @@
-import Network as Network
+import sys
+sys.path.append("../residual-sample-nn") # for finding the source files
 import GenerateData as generate_data
+import Network as Network
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import configparser
+import mnist_loader
 
 def RSNN_param_test(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times, threshold, coefficient, type):
     """
@@ -27,7 +30,7 @@ def RSNN_param_test(X_train, X_test, y_train, y_test, h_nodes, epochs, lr, times
 
     #Initialize the network
     np.random.seed(10)  # Ensures each network is initialized the same way.
-    net = Network.Network([in_dim, h_nodes, out_dim], type = type, pdw = ['gaussian']*2, pdb = ['gaussian']*2)
+    net = Network.Network([in_dim, h_nodes, out_dim], type = type, pdw =['gaussian'] * 2, pdb =['gaussian'] * 2)
     net.Learn(X_train, y_train, epochs=epochs, lrate = lr, times = times, threshold = threshold, bootstrap = False, coefficient = coefficient)
     acc_train = net.ClassificationAccuracy(X_train, y_train)
     acc_test = net.ClassificationAccuracy(X_test, y_test)
@@ -121,7 +124,6 @@ def main():
         network_lrate_plots(X_train, X_test, y_train, y_test, config['RS NN PARAMS'], config['THRESHOLD'])
 
     if config['DATA']['dataset'] == "mnist":
-        import mnist_loader
         train_full, validate_full, test_full = mnist_loader.load_data_wrapper() # we wont need validate dataset
         X_train = np.array(train_full[0][:train_size])
         y_train = np.array(train_full[1][:train_size])

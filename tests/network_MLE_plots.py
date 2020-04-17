@@ -1,7 +1,7 @@
 import sys
-sys.path.insert(0,'C:\\Users\\pmcw9\\Winter 2020\\CS 698\\Project Final Folder\\network files')
-import Network as Network
+sys.path.append("../residual-sample-nn") # for finding the source files
 import GenerateData as generate_data
+import Network as Network
 import numpy as np
 import matplotlib.pyplot as plt
 import configparser

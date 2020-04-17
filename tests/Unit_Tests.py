@@ -1,6 +1,7 @@
 # Standard imports.
+import sys
+sys.path.append("../residual-sample-nn") # for finding the source files
 import unittest
-import numpy as np
 import random
 # Import functions that need to be tested.
 from Network import *
