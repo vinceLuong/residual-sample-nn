@@ -5,7 +5,7 @@ with open("READ_package.md", "r") as fh:
 
 setuptools.setup(
     name="residual-sample-nn",
-    version="0.0.1",
+    version="0.0.2",
     author="Ren Yuan Xue, Pierre McWhannel",
     author_email="pmcwhannel@uwaterloo.ca, ryxue@uwaterloo.ca",
     description="An implementation of a residual sample neural net",
