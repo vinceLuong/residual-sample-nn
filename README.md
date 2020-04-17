@@ -5,3 +5,22 @@ To train this network, the distribution of each the weights are updated.  To do 
 
 This is the work has been done as part of coursework at the University of Waterloo.     
 # Installation
+This is a package that can be installed with the following command:
+
+```pip install -i https://test.pypi.org/simple/ residual-sample-nn```
+
+Furthermore, if you want to download the files on GitHub, that can be done.  The package files are contained under the ```residual-sample-nn``` folder. These are the python files that contain the implementation of the residual sample neural net.
+
+
+# Testing/Benchmarking
+To run the tests on the repo, you will need to download it from the GitHub page. Note that the code was developed on python 3.7.  
+
+The testing/benchmarking files are stored under the ```tests``` folder. To run the tests, follow the steps below:  
+
+1. Download the dependencies of the code base.  To do so, navigate to the root directory of the repository and type the following command into your console: <br/>
+```pip install -r requirements.txt```
+
+2. Go into the tests, folder and run any of the network testing files. As an example: <br/>
+```python network_benchmark_plots.py```
+
+3. Configure the tests to your desire of hyperparamaters/dataset with each appropriate config file. As an example, to configure ```network_lrate_plots.py```, edit the ```config_lr.ini``` file.   
